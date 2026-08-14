@@ -39,8 +39,6 @@ android.archs = arm64-v8a
 
 android.debug_artifact = apk
 
-android.permissions = INTERNET
-
 android.permissions = BLUETOOTH, BLUETOOTH_ADMIN, BLUETOOTH_CONNECT, BLUETOOTH_SCAN, ACCESS_FINE_LOCATION
 
 android.accept_sdk_license = True
