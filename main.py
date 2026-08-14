@@ -149,7 +149,6 @@ BoxLayout:
                 padding: dp(12)
                 spacing: dp(10)
 
-                # Search
                 BoxLayout:
                     size_hint_y: None
                     height: dp(42)
@@ -160,7 +159,6 @@ BoxLayout:
                         hint_text: "Cari produk atau scan barcode..."
                         on_text: app.filter_pos_products(self.text)
 
-                # Grid Produk & Cart
                 BoxLayout:
                     spacing: dp(10)
 
@@ -323,14 +321,14 @@ BoxLayout:
 
                     Spinner:
                         id: setting_paper_width
-                        text: app.paper_width
-                        values: ["58mm", "80mm"]
+                        text: "80mm"
+                        values: ["80mm", "58mm"]
                         size_hint_y: None
                         height: dp(40)
 
                     ModernTextInput:
                         id: setting_bt_mac
-                        hint_text: "MAC Address Printer Bluetooth (cth: 00:11:22:33:AA:BB)"
+                        hint_text: "MAC Address Printer Bluetooth"
                         text: app.bt_mac_address
 
                     PrimaryButton:
@@ -392,15 +390,15 @@ class POSApp(App):
     tax_percent = StringProperty("0")
     cashier_name = StringProperty("Admin")
     bt_mac_address = StringProperty("")
-    paper_width = StringProperty("58mm")
+    paper_width = StringProperty("80mm")
 
     cart = ListProperty([])
     cart_total = NumericProperty(0)
 
     def build(self):
         self.db = Database()
-        self.load_settings()
         root = Builder.load_string(KV)
+        self.load_settings(root)
         return root
 
     def on_start(self):
@@ -412,13 +410,17 @@ class POSApp(App):
         except:
             return "Rp 0"
 
-    def load_settings(self):
+    def load_settings(self, root_widget=None):
         self.store_name = self.db.get_setting("store_name", "TOKO SAYA")
         self.store_address = self.db.get_setting("store_address", "")
         self.tax_percent = self.db.get_setting("tax_percent", "0")
         self.cashier_name = self.db.get_setting("cashier_name", "Admin")
         self.bt_mac_address = self.db.get_setting("bt_mac_address", "")
-        self.paper_width = self.db.get_setting("paper_width", "58mm")
+        self.paper_width = self.db.get_setting("paper_width", "80mm")
+        
+        r = root_widget or self.root
+        if r and hasattr(r, 'ids') and 'setting_paper_width' in r.ids:
+            r.ids.setting_paper_width.text = self.paper_width
 
     def save_settings(self):
         ids = self.root.ids
@@ -562,6 +564,7 @@ class POSApp(App):
 
     def generate_receipt_text(self, invoice, cart_items, total, paid, change):
         lines = []
+        # Secara bawaan menggunakan 80mm (48 karakter)
         LINE_WIDTH = 48 if self.paper_width == "80mm" else 32
         
         lines.append(self.store_name.center(LINE_WIDTH))
