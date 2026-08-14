@@ -884,26 +884,43 @@ class POSApp(App):
 
     def generate_receipt_text(self, invoice, cart_items, total, paid, change):
         lines = []
-        lines.append(f"    {self.store_name}    ")
+        # Lebar standar kertas 80mm adalah 48 karakter
+        LINE_WIDTH = 48
+        
+        # Header (Otomatis Rata Tengah / Center)
+        lines.append(self.store_name.center(LINE_WIDTH))
         if self.store_address:
-            lines.append(f"  {self.store_address}  ")
-        lines.append("--------------------------------")
+            lines.append(self.store_address.center(LINE_WIDTH))
+            
+        lines.append("-" * LINE_WIDTH)
         lines.append(f"No  : {invoice}")
         lines.append(f"Tgl : {datetime.now().strftime('%Y-%m-%d %H:%M')}")
         lines.append(f"Ksr : {self.cashier_name}")
-        lines.append("--------------------------------")
+        lines.append("-" * LINE_WIDTH)
         
+        # Detail Barang Belanjaan
         for item in cart_items:
             lines.append(f"{item['name']}")
-            lines.append(f"  {item['qty']:g} x {item['price']:,.0f} = {item['line_total']:,.0f}".replace(",", "."))
+            # Format: '  1 x 10.000' di kiri, '10.000' di kanan pas ujung 48 karakter
+            qty_price = f"  {item['qty']:g} x {item['price']:,.0f}".replace(",", ".")
+            item_total = f"{item['line_total']:,.0f}".replace(",", ".")
+            spaces = LINE_WIDTH - len(qty_price) - len(item_total)
+            lines.append(qty_price + (" " * max(1, spaces)) + item_total)
             
-        lines.append("--------------------------------")
-        lines.append(f"Total  : {self.money(total)}")
-        lines.append(f"Bayar  : {self.money(paid)}")
-        lines.append(f"Kembali: {self.money(change)}")
-        lines.append("--------------------------------")
-        lines.append("    Terima Kasih Atas    ")
-        lines.append("    Kunjungan Anda!      ")
+        lines.append("-" * LINE_WIDTH)
+        
+        # Ringkasan Pembayaran (Rata Kanan)
+        tot_str = self.money(total)
+        paid_str = self.money(paid)
+        change_str = self.money(change)
+        
+        lines.append("Total  :".ljust(15) + tot_str.rjust(LINE_WIDTH - 15))
+        lines.append("Bayar  :".ljust(15) + paid_str.rjust(LINE_WIDTH - 15))
+        lines.append("Kembali:".ljust(15) + change_str.rjust(LINE_WIDTH - 15))
+        
+        lines.append("-" * LINE_WIDTH)
+        lines.append("Terima Kasih Atas Kunjungan Anda!".center(LINE_WIDTH))
+        
         return "\n".join(lines)
 
     def print_receipt(self, receipt_text):
