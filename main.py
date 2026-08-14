@@ -26,16 +26,15 @@ KV = """
 
 <NavButton@Button>:
     size_hint_y: None
-    height: dp(76)
+    height: dp(50)
     background_normal: ""
-    background_color: .98,.985,.995,1
+    background_color: .94,.95,.97,1
     color: .08,.11,.16,1
     font_size: "10sp"
     bold: True
     halign: "center"
     valign: "middle"
     text_size: self.size
-    padding: dp(2),dp(3)
 
 <TitleLabel@Label>:
     font_size: "21sp"
@@ -98,13 +97,14 @@ KV = """
             valign: "middle"
             text_size: self.size
 
-    # One-row mobile navigation - safe ASCII labels to avoid font/decode issues
+    # Two-row mobile navigation: larger and easier to tap/read
     GridLayout:
-        cols: 6
+        cols: 3
+        rows: 2
         size_hint_y: None
-        height: dp(82)
-        padding: dp(4),dp(3)
-        spacing: dp(2)
+        height: dp(104)
+        padding: dp(5)
+        spacing: dp(5)
         canvas.before:
             Color:
                 rgba: 1,1,1,1
@@ -113,27 +113,22 @@ KV = """
                 size: self.size
 
         NavButton:
-            text: "HOME\nDashboard"
+            text: "Dashboard"
             on_release: app.show_screen("dashboard")
-
         NavButton:
-            text: "POS\nKasir"
+            text: "Kasir / POS"
             on_release: app.show_screen("pos")
-
         NavButton:
-            text: "[ ]\nProduk"
+            text: "Produk"
             on_release: app.show_screen("products")
-
         NavButton:
-            text: "CLK\nRiwayat"
+            text: "Riwayat"
             on_release: app.show_screen("history")
-
         NavButton:
-            text: "DOC\nLaporan"
+            text: "Laporan"
             on_release: app.show_screen("reports")
-
         NavButton:
-            text: "SET\nPengaturan"
+            text: "Pengaturan"
             on_release: app.show_screen("settings")
 
     ScreenManager:
