@@ -16,7 +16,6 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 from kivy.uix.spinner import Spinner
-from kivy.uix.widget import Widget
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView
 from database import Database
@@ -245,78 +244,50 @@ KV = """
                     hint_text: "Cari produk atau scan barcode..."
                     on_text: app.refresh_pos_products(self.text)
 
-                BoxLayout:
-                    spacing: dp(10)
+                # Katalog Produk Penuh Layar
+                ScrollView:
+                    do_scroll_x: False
+                    GridLayout:
+                        id: product_grid
+                        cols: 1
+                        spacing: dp(6)
+                        size_hint_y: None
+                        height: self.minimum_height
+
+                # Floating Bar Ringkasan Keranjang di Bawah
+                CardBox:
+                    size_hint_y: None
+                    height: dp(54)
+                    padding: dp(8), dp(4)
+                    spacing: dp(8)
 
                     BoxLayout:
                         orientation: "vertical"
-                        spacing: dp(6)
-                        SectionLabel:
-                            text: "Katalog"
-                        ScrollView:
-                            do_scroll_x: False
-                            GridLayout:
-                                id: product_grid
-                                cols: 1
-                                spacing: dp(6)
-                                size_hint_y: None
-                                height: self.minimum_height
-
-                    CardBox:
-                        orientation: "vertical"
-                        size_hint_x: 0.95
-                        spacing: dp(6)
-                        
                         Label:
-                            text: "Keranjang Belanja"
-                            font_size: "12sp"
+                            id: cart_summary_items
+                            text: "0 Item"
+                            font_size: "11sp"
+                            color: .40, .45, .55, 1
+                            halign: "left"
+                            text_size: self.size
+                        Label:
+                            id: pos_total
+                            text: "Rp 0"
+                            font_size: "15sp"
                             bold: True
-                            color: .10, .14, .20, 1
-                            size_hint_y: None
-                            height: dp(24)
+                            color: .05, .55, .25, 1
                             halign: "left"
                             text_size: self.size
 
-                        ScrollView:
-                            do_scroll_x: False
-                            GridLayout:
-                                id: cart_grid
-                                cols: 1
-                                spacing: dp(4)
-                                size_hint_y: None
-                                height: self.minimum_height
-
-                        BoxLayout:
-                            orientation: "vertical"
-                            size_hint_y: None
-                            height: dp(100)
-                            spacing: dp(4)
-                            
-                            BoxLayout:
-                                Label:
-                                    text: "Total:"
-                                    bold: True
-                                    color: .10, .14, .20, 1
-                                    halign: "left"
-                                    text_size: self.size
-                                Label:
-                                    id: pos_total
-                                    text: "Rp 0"
-                                    bold: True
-                                    font_size: "15sp"
-                                    color: .05, .55, .25, 1
-                                    halign: "right"
-                                    text_size: self.size
-
-                            Button:
-                                text: "BAYAR"
-                                size_hint_y: None
-                                height: dp(44)
-                                background_normal: ""
-                                background_color: .05, .60, .30, 1
-                                color: 1, 1, 1, 1
-                                bold: True
-                                on_release: app.checkout()
+                    Button:
+                        text: "Lihat Keranjang"
+                        size_hint_x: None
+                        width: dp(140)
+                        background_normal: ""
+                        background_color: .05, .60, .30, 1
+                        color: 1, 1, 1, 1
+                        bold: True
+                        on_release: app.open_cart_popup()
 
         Screen:
             name: "products"
@@ -534,6 +505,7 @@ class POSApp(App):
         self.db = Database(os.path.join(self.user_data_dir, "pos.db"))
         self.load_settings()
         self.cart = []
+        self.cart_popup = None
         Builder.load_string(KV)
         return RootLayout()
 
@@ -573,7 +545,7 @@ class POSApp(App):
             self.refresh_dashboard()
         elif name == "pos":
             self.refresh_pos_products("")
-            self.refresh_cart()
+            self.update_cart_summary()
         elif name == "products":
             self.refresh_products("")
         elif name == "history":
@@ -584,7 +556,7 @@ class POSApp(App):
     def refresh_all(self):
         self.refresh_dashboard()
         self.refresh_pos_products("")
-        self.refresh_cart()
+        self.update_cart_summary()
         self.refresh_products("")
         self.refresh_history()
         self.refresh_reports()
@@ -604,21 +576,21 @@ class POSApp(App):
         grid = self.root.ids.product_grid
         grid.clear_widgets()
         for p in self.db.products(search)[:100]:
-            b = Button(
+            btn = Button(
                 text=f"{p['name']}\n{self.money(p['sell_price'])}  •  Stok {p['stock']:g} {p['unit']}",
-                size_hint_y=None, height=dp(64),
+                size_hint_y=None, height=dp(56),
                 background_normal="",
-                background_color=(.98, .985, .99, 1),
-                color=(.07, .09, .13, 1),
-                font_size="11sp",
+                background_color=(1, 1, 1, 1),
+                color=(.08, .10, .14, 1),
+                font_size="13sp",
                 bold=True,
                 halign="left",
                 valign="middle",
-                text_size=(dp(200), dp(50)),
-                padding=(dp(10), dp(6))
+                padding=(dp(12), dp(6))
             )
-            b.bind(on_release=lambda btn, pid=p["id"]: self.add_to_cart(pid))
-            grid.add_widget(b)
+            btn.bind(size=lambda instance, value: setattr(instance, 'text_size', (value[0] - dp(24), None)))
+            btn.bind(on_release=lambda b, pid=p["id"]: self.add_to_cart(pid))
+            grid.add_widget(btn)
 
     def add_to_cart(self, product_id):
         p = self.db.product_by_id(product_id)
@@ -632,29 +604,81 @@ class POSApp(App):
                     return
                 item["qty"] += 1
                 item["line_total"] = item["qty"] * item["price"]
-                self.refresh_cart()
+                self.update_cart_summary()
                 return
         self.cart.append({
             "id": p["id"], "name": p["name"], "qty": 1,
             "price": float(p["sell_price"]), "discount": 0,
             "line_total": float(p["sell_price"])
         })
-        self.refresh_cart()
+        self.update_cart_summary()
 
-    def refresh_cart(self):
-        grid = self.root.ids.cart_grid
-        grid.clear_widgets()
+    def update_cart_summary(self):
+        if not hasattr(self, "root") or not self.root:
+            return
+        subtotal, discount, tax, total, paid, change = self.recalculate_pos()
+        total_items = sum(item["qty"] for item in self.cart)
+        self.root.ids.cart_summary_items.text = f"{total_items:g} Item"
+        self.root.ids.pos_total.text = self.money(total)
+
+    def open_cart_popup(self):
+        if not self.cart:
+            self.info("Keranjang belanja masih kosong.")
+            return
+
+        content = BoxLayout(orientation="vertical", spacing=dp(10), padding=dp(10))
+        
+        # Grid Keranjang di dalam ScrollView Popup
+        scroll = ScrollView(do_scroll_x=False)
+        self.cart_popup_grid = GridLayout(cols=1, spacing=dp(6), size_hint_y=None)
+        self.cart_popup_grid.bind(minimum_height=self.cart_popup_grid.setter('height'))
+        
+        scroll.add_widget(self.cart_popup_grid)
+        content.add_widget(scroll)
+
+        # Bottom Total & Checkout
+        footer = BoxLayout(size_hint_y=None, height=dp(50), spacing=dp(10))
+        self.popup_total_label = Label(
+            text="Total: " + self.money(sum(x["line_total"] for x in self.cart)),
+            bold=True, font_size="15sp", color=(0.05, 0.55, 0.25, 1),
+            halign="left", valign="middle"
+        )
+        self.popup_total_label.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
+        
+        btn_pay = Button(
+            text="PROSES BAYAR", size_hint_x=None, width=dp(140),
+            background_normal="", background_color=(0.05, 0.60, 0.30, 1),
+            color=(1, 1, 1, 1), bold=True
+        )
+        btn_pay.bind(on_release=lambda instance: self.checkout())
+        
+        footer.add_widget(self.popup_total_label)
+        footer.add_widget(btn_pay)
+        content.add_widget(footer)
+
+        self.cart_popup = Popup(
+            title="Keranjang Belanja",
+            content=content,
+            size_hint=(0.92, 0.75)
+        )
+        self.refresh_cart_popup_grid()
+        self.cart_popup.open()
+
+    def refresh_cart_popup_grid(self):
+        if not hasattr(self, 'cart_popup_grid') or not self.cart_popup_grid:
+            return
+        
+        self.cart_popup_grid.clear_widgets()
         for item in self.cart:
-            row = BoxLayout(size_hint_y=None, height=dp(50), spacing=dp(4), padding=(dp(4), dp(2)))
-            label = Label(
-                text=f"{item['name']} x{item['qty']:g}\n{self.money(item['line_total'])}",
-                halign="left",
-                valign="middle",
-                text_size=(None, None),
-                color=(.08, .10, .14, 1),
-                font_size="10sp",
-                bold=True
+            row = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(6))
+            
+            lbl = Label(
+                text=f"{item['name']}\n{self.money(item['price'])} x {item['qty']:g} = {self.money(item['line_total'])}",
+                halign="left", valign="middle", color=(0.1, 0.14, 0.2, 1),
+                font_size="11sp", bold=True
             )
+            lbl.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
+
             minus = Button(text="-", size_hint_x=None, width=dp(36),
                            background_normal="", background_color=(.90,.92,.95,1),
                            color=(.08,.10,.14,1), font_size="14sp", bold=True)
@@ -664,15 +688,20 @@ class POSApp(App):
             delete = Button(text="x", size_hint_x=None, width=dp(36),
                             background_normal="", background_color=(.98,.90,.90,1),
                             color=(.72,.12,.12,1), font_size="12sp", bold=True)
+            
             minus.bind(on_release=lambda btn, iid=item["id"]: self.change_qty(iid, -1))
             plus.bind(on_release=lambda btn, iid=item["id"]: self.change_qty(iid, 1))
             delete.bind(on_release=lambda btn, iid=item["id"]: self.remove_cart(iid))
-            row.add_widget(label)
+            
+            row.add_widget(lbl)
             row.add_widget(minus)
             row.add_widget(plus)
             row.add_widget(delete)
-            grid.add_widget(row)
-        self.recalculate_pos()
+            self.cart_popup_grid.add_widget(row)
+
+        subtotal, discount, tax, total, paid, change = self.recalculate_pos()
+        if hasattr(self, 'popup_total_label') and self.popup_total_label:
+            self.popup_total_label.text = "Total: " + self.money(total)
 
     def change_qty(self, product_id, delta):
         for item in self.cart:
@@ -686,15 +715,18 @@ class POSApp(App):
                     item["qty"] = p["stock"]
                 item["line_total"] = item["qty"] * item["price"]
                 break
-        self.refresh_cart()
+        self.update_cart_summary()
+        self.refresh_cart_popup_grid()
 
     def remove_cart(self, product_id):
         self.cart = [x for x in self.cart if x["id"] != product_id]
-        self.refresh_cart()
+        self.update_cart_summary()
+        if not self.cart and self.cart_popup:
+            self.cart_popup.dismiss()
+        else:
+            self.refresh_cart_popup_grid()
 
     def recalculate_pos(self, *_):
-        if not hasattr(self, "root") or not self.root:
-            return
         subtotal = sum(x["line_total"] for x in self.cart)
         discount = 0
         try:
@@ -704,7 +736,6 @@ class POSApp(App):
         total = max(0, subtotal - discount + tax)
         paid = total
         change = 0
-        self.root.ids.pos_total.text = self.money(total)
         return subtotal, discount, tax, total, paid, change
 
     def checkout(self):
@@ -717,6 +748,8 @@ class POSApp(App):
             self.cart, subtotal, discount, tax, total, paid, change, payment
         )
         self.cart = []
+        if self.cart_popup:
+            self.cart_popup.dismiss()
         self.refresh_all()
         self.info(
             f"Transaksi Berhasil!\n\nNota: {invoice}\nTotal: {self.money(total)}"
