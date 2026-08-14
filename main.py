@@ -98,7 +98,7 @@ KV = """
             valign: "middle"
             text_size: self.size
 
-    # One-row icon navigation for mobile
+    # One-row mobile navigation - safe ASCII labels to avoid font/decode issues
     GridLayout:
         cols: 6
         size_hint_y: None
@@ -113,33 +113,27 @@ KV = """
                 size: self.size
 
         NavButton:
-            text: "âŒ‚\nDashboard"
-            font_size: "10sp"
+            text: "HOME\nDashboard"
             on_release: app.show_screen("dashboard")
 
         NavButton:
-            text: "â–£\nKasir / POS"
-            font_size: "10sp"
+            text: "POS\nKasir"
             on_release: app.show_screen("pos")
 
         NavButton:
-            text: "â¬¡\nProduk"
-            font_size: "10sp"
+            text: "[ ]\nProduk"
             on_release: app.show_screen("products")
 
         NavButton:
-            text: "â—·\nRiwayat"
-            font_size: "10sp"
+            text: "CLK\nRiwayat"
             on_release: app.show_screen("history")
 
         NavButton:
-            text: "â–¤\nLaporan"
-            font_size: "10sp"
+            text: "DOC\nLaporan"
             on_release: app.show_screen("reports")
 
         NavButton:
-            text: "âš™\nPengaturan"
-            font_size: "10sp"
+            text: "SET\nPengaturan"
             on_release: app.show_screen("settings")
 
     ScreenManager:
@@ -152,7 +146,7 @@ KV = """
                 BoxLayout:
                     orientation: "vertical"
                     padding: dp(12)
-                    spacing: dp(8)
+                    spacing: dp(9)
                     size_hint_y: None
                     height: self.minimum_height
 
