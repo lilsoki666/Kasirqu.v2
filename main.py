@@ -397,17 +397,6 @@ class POSApp(App):
 
     def on_start(self):
         self.refresh_all()
-        # Request Izin Bluetooth Android otomatis agar tidak crash
-        if platform == 'android':
-            try:
-                from android.permissions import request_permissions, Permission
-                request_permissions([
-                    Permission.BLUETOOTH_CONNECT,
-                    Permission.BLUETOOTH_SCAN,
-                    Permission.BLUETOOTH_ADMIN
-                ])
-            except Exception as e:
-                print("Permission request bypass:", e)
 
     def money(self, val):
         try:
@@ -493,7 +482,6 @@ class POSApp(App):
             row = BoxLayout(size_hint_y=None, height=dp(36), spacing=dp(2))
             row.add_widget(Label(text=item['name'], font_size='10sp', color=(0.1, 0.1, 0.1, 1), size_hint_x=0.35))
             
-            # Tombol - & + Kuantitas
             btn_minus = Button(text="-", size_hint_x=0.1, background_normal='', background_color=(0.8, 0.8, 0.8, 1), color=(0,0,0,1))
             btn_minus.bind(on_release=lambda x, i=idx: self.change_cart_qty(i, -1))
             row.add_widget(btn_minus)
@@ -543,7 +531,6 @@ class POSApp(App):
         pay_input = TextInput(hint_text="Jumlah Uang Bayar", input_filter='int', multiline=False, size_hint_y=None, height=dp(40))
         content.add_widget(pay_input)
 
-        # Tombol Quick Money (Uang Pas, 10k, 20k, 50k, 100k)
         qm_box = BoxLayout(spacing=dp(4), size_hint_y=None, height=dp(32))
         quick_amounts = [("Pas", self.cart_total), ("10k", 10000), ("20k", 20000), ("50k", 50000), ("100k", 100000)]
         for label_text, val in quick_amounts:
