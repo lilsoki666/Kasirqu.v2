@@ -16,6 +16,7 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 from kivy.uix.spinner import Spinner
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView
 from database import Database
@@ -244,7 +245,6 @@ KV = """
                     hint_text: "Cari produk atau scan barcode..."
                     on_text: app.refresh_pos_products(self.text)
 
-                # Katalog Produk Penuh Layar
                 ScrollView:
                     do_scroll_x: False
                     GridLayout:
@@ -254,7 +254,6 @@ KV = """
                         size_hint_y: None
                         height: self.minimum_height
 
-                # Floating Bar Ringkasan Keranjang di Bawah
                 CardBox:
                     size_hint_y: None
                     height: dp(54)
@@ -506,6 +505,8 @@ class POSApp(App):
         self.load_settings()
         self.cart = []
         self.cart_popup = None
+        self.cart_popup_grid = None
+        self.popup_total_label = None
         Builder.load_string(KV)
         return RootLayout()
 
@@ -628,25 +629,23 @@ class POSApp(App):
 
         content = BoxLayout(orientation="vertical", spacing=dp(10), padding=dp(10))
         
-        # Grid Keranjang di dalam ScrollView Popup
         scroll = ScrollView(do_scroll_x=False)
-        self.cart_popup_grid = GridLayout(cols=1, spacing=dp(6), size_hint_y=None)
+        self.cart_popup_grid = GridLayout(cols=1, spacing=dp(8), size_hint_y=None)
         self.cart_popup_grid.bind(minimum_height=self.cart_popup_grid.setter('height'))
         
         scroll.add_widget(self.cart_popup_grid)
         content.add_widget(scroll)
 
-        # Bottom Total & Checkout
-        footer = BoxLayout(size_hint_y=None, height=dp(50), spacing=dp(10))
+        footer = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(8))
         self.popup_total_label = Label(
             text="Total: " + self.money(sum(x["line_total"] for x in self.cart)),
-            bold=True, font_size="15sp", color=(0.05, 0.55, 0.25, 1),
+            bold=True, font_size="14sp", color=(0.05, 0.55, 0.25, 1),
             halign="left", valign="middle"
         )
         self.popup_total_label.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
         
         btn_pay = Button(
-            text="PROSES BAYAR", size_hint_x=None, width=dp(140),
+            text="BAYAR", size_hint_x=None, width=dp(120),
             background_normal="", background_color=(0.05, 0.60, 0.30, 1),
             color=(1, 1, 1, 1), bold=True
         )
@@ -665,12 +664,12 @@ class POSApp(App):
         self.cart_popup.open()
 
     def refresh_cart_popup_grid(self):
-        if not hasattr(self, 'cart_popup_grid') or not self.cart_popup_grid:
+        if not self.cart_popup_grid:
             return
         
         self.cart_popup_grid.clear_widgets()
         for item in self.cart:
-            row = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(6))
+            row = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(4))
             
             lbl = Label(
                 text=f"{item['name']}\n{self.money(item['price'])} x {item['qty']:g} = {self.money(item['line_total'])}",
@@ -700,7 +699,7 @@ class POSApp(App):
             self.cart_popup_grid.add_widget(row)
 
         subtotal, discount, tax, total, paid, change = self.recalculate_pos()
-        if hasattr(self, 'popup_total_label') and self.popup_total_label:
+        if self.popup_total_label:
             self.popup_total_label.text = "Total: " + self.money(total)
 
     def change_qty(self, product_id, delta):
