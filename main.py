@@ -4,10 +4,9 @@ from datetime import datetime
 
 from kivy.app import App
 from kivy.lang import Builder
-from kivy.properties import StringProperty, ListProperty, NumericProperty, ObjectProperty
+from kivy.properties import StringProperty, ListProperty, NumericProperty
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.modalpopup import ModalPopup if False else None # Compatibility fallback
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.uix.button import Button
@@ -16,7 +15,6 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
 from kivy.metrics import dp
-from kivy.core.window import Window
 from kivy.utils import platform
 
 from database import Database
@@ -41,7 +39,6 @@ class ThermalPrinterManager:
                 return False, "Bluetooth tidak aktif/tersedia"
             
             device = adapter.getRemoteDevice(mac_address)
-            # Standard SPP UUID for Bluetooth Serial Boards
             spp_uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
             
             socket = device.createRfcommSocketToServiceRecord(spp_uuid)
@@ -49,7 +46,6 @@ class ThermalPrinterManager:
             
             output_stream = socket.getOutputStream()
             
-            # Reset printer
             INIT_PRINTER = bytes([0x1B, 0x40])
             FEED_PAPER   = bytes([0x1D, 0x56, 0x42, 0x00])
             
@@ -153,7 +149,7 @@ BoxLayout:
                 padding: dp(12)
                 spacing: dp(10)
 
-                # Search & Fast Add
+                # Search
                 BoxLayout:
                     size_hint_y: None
                     height: dp(42)
@@ -164,11 +160,10 @@ BoxLayout:
                         hint_text: "Cari produk atau scan barcode..."
                         on_text: app.filter_pos_products(self.text)
 
-                # Grid Produk & Cart Split
+                # Grid Produk & Cart
                 BoxLayout:
                     spacing: dp(10)
 
-                    # Panel Kiri: List Produk
                     ScrollView:
                         size_hint_x: 0.55
                         GridLayout:
@@ -178,7 +173,6 @@ BoxLayout:
                             size_hint_y: None
                             height: self.minimum_height
 
-                    # Panel Kanan: Keranjang
                     BoxLayout:
                         orientation: 'vertical'
                         size_hint_x: 0.45
@@ -207,7 +201,6 @@ BoxLayout:
                                 height: self.minimum_height
                                 spacing: dp(4)
 
-                        # Total Section
                         BoxLayout:
                             orientation: 'vertical'
                             size_hint_y: None
@@ -318,7 +311,6 @@ BoxLayout:
                     SectionLabel:
                         text: "Printer Thermal Bluetooth"
 
-                    # --- LAKSA 1: Pilihan Dropdown Ukuran Kertas ---
                     Label:
                         text: "Ukuran Kertas Struk:"
                         font_size: "12sp"
@@ -400,8 +392,6 @@ class POSApp(App):
     tax_percent = StringProperty("0")
     cashier_name = StringProperty("Admin")
     bt_mac_address = StringProperty("")
-    
-    # --- LANGKAH 2: Properti Ukuran Kertas ---
     paper_width = StringProperty("58mm")
 
     cart = ListProperty([])
@@ -428,8 +418,6 @@ class POSApp(App):
         self.tax_percent = self.db.get_setting("tax_percent", "0")
         self.cashier_name = self.db.get_setting("cashier_name", "Admin")
         self.bt_mac_address = self.db.get_setting("bt_mac_address", "")
-        
-        # --- LANGKAH 2: Load Pengaturan Kertas ---
         self.paper_width = self.db.get_setting("paper_width", "58mm")
 
     def save_settings(self):
@@ -438,8 +426,6 @@ class POSApp(App):
         self.db.set_setting("store_address", ids.setting_address.text.strip())
         self.db.set_setting("cashier_name", ids.setting_cashier.text.strip() or "Admin")
         self.db.set_setting("bt_mac_address", ids.setting_bt_mac.text.strip())
-        
-        # --- LANGKAH 2: Simpan Pengaturan Kertas ---
         self.db.set_setting("paper_width", ids.setting_paper_width.text)
         
         self.load_settings()
@@ -451,7 +437,6 @@ class POSApp(App):
         self.refresh_product_list()
         self.refresh_history_list()
 
-    # --- POS / CART LOGIC ---
     def refresh_pos_products(self, query=""):
         grid = self.root.ids.pos_product_grid
         grid.clear_widgets()
@@ -556,7 +541,6 @@ class POSApp(App):
         change = paid - self.cart_total
         invoice = f"INV{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-        # Simpan Transaksi Ke Database
         success, msg = self.db.add_sale(invoice, self.cart, self.cart_total, paid, change)
         if not success:
             self.info(f"Gagal simpan: {msg}")
@@ -564,29 +548,22 @@ class POSApp(App):
 
         popup.dismiss()
 
-        # Generate Struk Sesuai Format Kertas
         receipt_text = self.generate_receipt_text(invoice, self.cart, self.cart_total, paid, change)
 
-        # Cetak Printer jika MAC Address diisi
         if self.bt_mac_address.strip():
             printed, p_msg = ThermalPrinterManager.print_receipt(self.bt_mac_address.strip(), receipt_text)
             self.info(f"Transaksi Sukses! Kembali: {self.money(change)}\n({p_msg})")
         else:
             self.info(f"Transaksi Sukses! Kembali: {self.money(change)}\n(Printer tidak dikonfigurasi)")
 
-        # Reset Cart & Screen
         self.cart = []
         self.update_cart_ui()
         self.refresh_all()
 
-    # --- LANGKAH 3: Logika Pembentukan Struk Dinamis (58mm vs 80mm) ---
     def generate_receipt_text(self, invoice, cart_items, total, paid, change):
         lines = []
-        
-        # Penentuan Lebar Dinamis (32 karakter untuk 58mm, 48 karakter untuk 80mm)
         LINE_WIDTH = 48 if self.paper_width == "80mm" else 32
         
-        # Header (Auto Center)
         lines.append(self.store_name.center(LINE_WIDTH))
         if self.store_address:
             lines.append(self.store_address.center(LINE_WIDTH))
@@ -597,7 +574,6 @@ class POSApp(App):
         lines.append(f"Ksr : {self.cashier_name}")
         lines.append("-" * LINE_WIDTH)
         
-        # Item Belanjaan
         for item in cart_items:
             lines.append(f"{item['name']}")
             qty_price = f"  {item['qty']:g} x {item['price']:,.0f}".replace(",", ".")
@@ -607,7 +583,6 @@ class POSApp(App):
             
         lines.append("-" * LINE_WIDTH)
         
-        # Total & Pembayaran (Rata Kanan)
         tot_str = self.money(total)
         paid_str = self.money(paid)
         change_str = self.money(change)
@@ -622,7 +597,6 @@ class POSApp(App):
         
         return "\n".join(lines)
 
-    # --- PRODUCT CRUD ---
     def refresh_product_list(self, query=""):
         container = self.root.ids.product_crud_list
         container.clear_widgets()
@@ -675,7 +649,6 @@ class POSApp(App):
         content.add_widget(btn_save)
         popup.open()
 
-    # --- HISTORY LOGIC ---
     def refresh_history_list(self):
         container = self.root.ids.history_list
         container.clear_widgets()
