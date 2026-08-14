@@ -669,12 +669,20 @@ class POSApp(App):
         
         self.cart_popup_grid.clear_widgets()
         for item in self.cart:
-            row = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(4))
-            
+            # Menggunakan CardBox berlapis putih agar latar item terlihat bersih & terang
+            row = BoxLayout(size_hint_y=None, height=dp(52), spacing=dp(6), padding=dp(6))
+            with row.canvas.before:
+                from kivy.graphics import Color, RoundedRectangle
+                Color(1, 1, 1, 1) # Latar Putih
+                rect = RoundedRectangle(pos=row.pos, size=row.size, radius=[dp(6)])
+            row.bind(pos=lambda inst, val: setattr(rect, 'pos', val), size=lambda inst, val: setattr(rect, 'size', val))
+
+            # Teks nama produk dan rincian warna Hitam Pekat (Kontras Tinggi)
             lbl = Label(
                 text=f"{item['name']}\n{self.money(item['price'])} x {item['qty']:g} = {self.money(item['line_total'])}",
-                halign="left", valign="middle", color=(0.1, 0.14, 0.2, 1),
-                font_size="11sp", bold=True
+                halign="left", valign="middle", 
+                color=(0.07, 0.09, 0.15, 1), # Hitam Pekat
+                font_size="12sp", bold=True
             )
             lbl.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
 
