@@ -2,6 +2,7 @@ __version__ = "1.0.0"
 
 import csv
 import os
+import platform
 from datetime import datetime
 import traceback
 
@@ -22,6 +23,67 @@ from kivy.uix.scrollview import ScrollView
 from database import Database
 
 
+# ==========================================
+# HELPER PRINTER THERMAL BLUETOOTH
+# ==========================================
+class ThermalPrinterManager:
+    def __init__(self, mac_address=""):
+        self.mac_address = mac_address
+
+    def print_receipt(self, text_content):
+        if not self.mac_address or not self.mac_address.strip():
+            return False, "MAC Address printer belum diatur di Pengaturan."
+
+        # Mengecek apakah berjalan di sistem Android
+        if platform.system() == "Linux" and "ANDROID_ARGUMENT" in os.environ:
+            return self._print_android(text_content)
+        else:
+            # Mode Simulasi saat dijalankan di PC / Laptop
+            print("\n========== SIMULASI CETAK PRINTER ==========")
+            print(text_content)
+            print("============================================\n")
+            return True, "Mode Laptop/PC: Struk berhasil dicetak ke Terminal (Simulasi)."
+
+    def _print_android(self, text_content):
+        try:
+            from jnius import autoclass
+            
+            BluetoothAdapter = autoclass('android.bluetooth.BluetoothAdapter')
+            UUID = autoclass('java.util.UUID')
+
+            adapter = BluetoothAdapter.getDefaultAdapter()
+            if not adapter or not adapter.isEnabled():
+                return False, "Bluetooth HP tidak aktif."
+
+            device = adapter.getRemoteDevice(self.mac_address.strip())
+            # UUID standar Serial Port Profile (SPP) Printer Thermal
+            spp_uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+            
+            socket = device.createRfcommSocketToServiceRecord(spp_uuid)
+            socket.connect()
+            
+            output_stream = socket.getOutputStream()
+            
+            # Format Perintah ESC/POS
+            INIT_PRINTER = bytes([0x1B, 0x40])  # Reset printer
+            FEED_PAPER   = bytes([0x1D, 0x56, 0x42, 0x00]) # Feed / Cut
+
+            output_stream.write(INIT_PRINTER)
+            output_stream.write(text_content.encode('utf-8'))
+            output_stream.write(bytes("\n\n\n", 'utf-8'))
+            output_stream.write(FEED_PAPER)
+            
+            output_stream.flush()
+            socket.close()
+            return True, "Struk berhasil dicetak!"
+
+        except Exception as e:
+            return False, f"Gagal cetak Bluetooth: {str(e)}"
+
+
+# ==========================================
+# KIVY INTERFACE (KV LANGUAGE)
+# ==========================================
 KV = """
 #:import dp kivy.metrics.dp
 
@@ -431,6 +493,24 @@ KV = """
                         hint_text: "Nama kasir"
                         text: app.cashier_name
 
+                    SectionLabel:
+                        text: "Printer Thermal Bluetooth"
+
+                    ModernTextInput:
+                        id: setting_bt_mac
+                        hint_text: "MAC Address Printer (cth: 00:11:22:33:AA:BB)"
+                        text: app.bt_mac_address
+
+                    Button:
+                        text: "Tes Cetak Printer"
+                        size_hint_y: None
+                        height: dp(40)
+                        background_normal: ""
+                        background_color: .88, .91, .95, 1
+                        color: .08, .11, .16, 1
+                        bold: True
+                        on_release: app.test_print()
+
                     Button:
                         text: "Simpan Pengaturan"
                         size_hint_y: None
@@ -510,6 +590,7 @@ class POSApp(App):
     store_address = StringProperty("")
     tax_percent = StringProperty("0")
     cashier_name = StringProperty("Admin")
+    bt_mac_address = StringProperty("")
 
     def build(self):
         self.title = "POS Kasir"
@@ -553,6 +634,7 @@ class POSApp(App):
         self.store_address = self.db.get_setting("store_address", "")
         self.tax_percent = self.db.get_setting("tax_percent", "0")
         self.cashier_name = self.db.get_setting("cashier_name", "Admin")
+        self.bt_mac_address = self.db.get_setting("bt_mac_address", "")
 
     def show_screen(self, name):
         self.root.ids.sm.current = name
@@ -643,7 +725,6 @@ class POSApp(App):
 
         content = BoxLayout(orientation="vertical", spacing=dp(10), padding=dp(10))
         
-        # Scroll Area untuk daftar item
         scroll = ScrollView(do_scroll_x=False)
         self.cart_popup_grid = GridLayout(cols=1, spacing=dp(8), size_hint_y=None)
         self.cart_popup_grid.bind(minimum_height=self.cart_popup_grid.setter('height'))
@@ -651,7 +732,6 @@ class POSApp(App):
         scroll.add_widget(self.cart_popup_grid)
         content.add_widget(scroll)
 
-        # Section Total, Pembayaran & Kembalian
         checkout_box = BoxLayout(orientation="vertical", size_hint_y=None, height=dp(130), spacing=dp(6))
 
         total_val = sum(x["line_total"] for x in self.cart)
@@ -662,7 +742,6 @@ class POSApp(App):
         )
         self.popup_total_label.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
 
-        # Input Uang Diterima
         pay_row = BoxLayout(size_hint_y=None, height=dp(42), spacing=dp(8))
         pay_lbl = Label(
             text="Uang Diterima:", font_size="12sp", bold=True,
@@ -682,7 +761,6 @@ class POSApp(App):
         pay_row.add_widget(pay_lbl)
         pay_row.add_widget(self.paid_input)
 
-        # Label Kembalian
         self.popup_change_label = Label(
             text="Kembalian: Rp 0",
             bold=True, font_size="14sp", color=(0.10, 0.40, 0.80, 1),
@@ -722,10 +800,10 @@ class POSApp(App):
         diff = paid_amount - total
         if diff >= 0:
             self.popup_change_label.text = f"Kembalian: {self.money(diff)}"
-            self.popup_change_label.color = (0.10, 0.40, 0.80, 1) # Blue
+            self.popup_change_label.color = (0.10, 0.40, 0.80, 1)
         else:
             self.popup_change_label.text = f"Kurang: {self.money(abs(diff))}"
-            self.popup_change_label.color = (0.80, 0.20, 0.20, 1) # Red
+            self.popup_change_label.color = (0.80, 0.20, 0.20, 1)
 
     def refresh_cart_popup_grid(self):
         if not self.cart_popup_grid:
@@ -804,6 +882,45 @@ class POSApp(App):
         change = 0
         return subtotal, discount, tax, total, paid, change
 
+    def generate_receipt_text(self, invoice, cart_items, total, paid, change):
+        lines = []
+        lines.append(f"    {self.store_name}    ")
+        if self.store_address:
+            lines.append(f"  {self.store_address}  ")
+        lines.append("--------------------------------")
+        lines.append(f"No  : {invoice}")
+        lines.append(f"Tgl : {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        lines.append(f"Ksr : {self.cashier_name}")
+        lines.append("--------------------------------")
+        
+        for item in cart_items:
+            lines.append(f"{item['name']}")
+            lines.append(f"  {item['qty']:g} x {item['price']:,.0f} = {item['line_total']:,.0f}".replace(",", "."))
+            
+        lines.append("--------------------------------")
+        lines.append(f"Total  : {self.money(total)}")
+        lines.append(f"Bayar  : {self.money(paid)}")
+        lines.append(f"Kembali: {self.money(change)}")
+        lines.append("--------------------------------")
+        lines.append("    Terima Kasih Atas    ")
+        lines.append("    Kunjungan Anda!      ")
+        return "\n".join(lines)
+
+    def print_receipt(self, receipt_text):
+        printer = ThermalPrinterManager(self.bt_mac_address)
+        return printer.print_receipt(receipt_text)
+
+    def test_print(self):
+        sample = (
+            f"   {self.store_name}   \n"
+            "--------------------------------\n"
+            "TES CETAK PRINTER THERMAL\n"
+            "Koneksi Bluetooth Berhasil!\n"
+            "--------------------------------"
+        )
+        success, msg = self.print_receipt(sample)
+        self.info(msg, "Tes Cetak")
+
     def checkout(self):
         if not self.cart:
             self.info("Keranjang masih kosong.")
@@ -811,7 +928,6 @@ class POSApp(App):
 
         subtotal, discount, tax, total, paid, change = self.recalculate_pos()
         
-        # Validasi Uang Diterima
         paid_val = total
         if self.paid_input and self.paid_input.text.strip():
             try:
@@ -829,6 +945,11 @@ class POSApp(App):
         invoice = self.db.save_sale(
             self.cart, subtotal, discount, tax, total, paid_val, change_val, payment
         )
+        
+        # Format teks dan cetak otomatis
+        receipt_text = self.generate_receipt_text(invoice, self.cart, total, paid_val, change_val)
+        print_ok, print_msg = self.print_receipt(receipt_text)
+
         self.cart = []
         if self.cart_popup:
             self.cart_popup.dismiss()
@@ -839,7 +960,8 @@ class POSApp(App):
             f"Nota: {invoice}\n"
             f"Total: {self.money(total)}\n"
             f"Bayar: {self.money(paid_val)}\n"
-            f"Kembali: {self.money(change_val)}"
+            f"Kembali: {self.money(change_val)}\n\n"
+            f"Status Printer: {print_msg}"
         )
 
     def refresh_products(self, search):
@@ -983,26 +1105,51 @@ class POSApp(App):
                 break
         if not sale:
             return
-        lines = [
-            f"Invoice: {sale['invoice']}",
-            f"Tanggal: {sale['created_at'].replace('T',' ')}",
-            "---------------------------------------"
-        ]
-        for item in self.db.sale_items(sale_id):
-            lines.append(
-                f"{item['product_name']} x{item['qty']:g} = "
-                f"{self.money(item['line_total'])}"
-            )
-        lines += [
-            "---------------------------------------",
-            f"Subtotal: {self.money(sale['subtotal'])}",
-            f"Diskon: {self.money(sale['discount'])}",
-            f"Pajak: {self.money(sale['tax'])}",
-            f"TOTAL: {self.money(sale['total'])}",
-            f"Bayar: {self.money(sale['paid'])}",
-            f"Kembali: {self.money(sale['change_amount'])}",
-        ]
-        self.info("\n".join(lines), "Detail Transaksi")
+
+        items = self.db.sale_items(sale_id)
+        
+        # Bikin format teks struk untuk cetak ulang
+        cart_repr = []
+        for it in items:
+            cart_repr.append({
+                "name": it['product_name'],
+                "qty": it['qty'],
+                "price": it['price'],
+                "line_total": it['line_total']
+            })
+            
+        receipt_text = self.generate_receipt_text(
+            sale['invoice'], cart_repr, sale['total'], sale['paid'], sale['change_amount']
+        )
+
+        content = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(10))
+        scroll = ScrollView(do_scroll_x=False)
+        
+        lbl = Label(
+            text=receipt_text, font_size="12sp", color=(0.10, 0.14, 0.20, 1),
+            size_hint_y=None, halign="left", valign="top"
+        )
+        lbl.bind(texture_size=lambda instance, value: setattr(instance, 'height', value[1]))
+        lbl.bind(width=lambda instance, value: setattr(instance, 'text_size', (value, None)))
+        
+        scroll.add_widget(lbl)
+        content.add_widget(scroll)
+
+        btn_reprint = Button(
+            text="Cetak Ulang Struk", size_hint_y=None, height=dp(40),
+            background_normal="", background_color=(0.05, 0.60, 0.30, 1),
+            color=(1, 1, 1, 1), bold=True
+        )
+        
+        popup = WhitePopup(title="Detail Transaksi", content=content, size_hint=(0.85, 0.75))
+        
+        def do_reprint(*_):
+            ok, msg = self.print_receipt(receipt_text)
+            self.info(msg, "Status Cetak")
+
+        btn_reprint.bind(on_release=do_reprint)
+        content.add_widget(btn_reprint)
+        popup.open()
 
     def refresh_reports(self):
         grid = self.root.ids.report_grid
@@ -1046,6 +1193,9 @@ class POSApp(App):
         self.db.set_setting("tax_percent", ids.setting_tax.text.strip() or "0")
         self.db.set_setting(
             "cashier_name", ids.setting_cashier.text.strip() or "Admin"
+        )
+        self.db.set_setting(
+            "bt_mac_address", ids.setting_bt_mac.text.strip()
         )
         self.load_settings()
         self.refresh_all()
