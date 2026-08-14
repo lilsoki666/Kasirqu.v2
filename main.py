@@ -519,6 +519,8 @@ class POSApp(App):
         self.cart_popup = None
         self.cart_popup_grid = None
         self.popup_total_label = None
+        self.popup_change_label = None
+        self.paid_input = None
         Builder.load_string(KV)
         return RootLayout()
 
@@ -641,39 +643,89 @@ class POSApp(App):
 
         content = BoxLayout(orientation="vertical", spacing=dp(10), padding=dp(10))
         
+        # Scroll Area untuk daftar item
         scroll = ScrollView(do_scroll_x=False)
-        self.cart_popup_grid = GridLayout(cols=1, spacing=dp(10), size_hint_y=None)
+        self.cart_popup_grid = GridLayout(cols=1, spacing=dp(8), size_hint_y=None)
         self.cart_popup_grid.bind(minimum_height=self.cart_popup_grid.setter('height'))
         
         scroll.add_widget(self.cart_popup_grid)
         content.add_widget(scroll)
 
-        footer = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(8))
+        # Section Total, Pembayaran & Kembalian
+        checkout_box = BoxLayout(orientation="vertical", size_hint_y=None, height=dp(130), spacing=dp(6))
+
+        total_val = sum(x["line_total"] for x in self.cart)
         self.popup_total_label = Label(
-            text="Total: " + self.money(sum(x["line_total"] for x in self.cart)),
+            text="Total Tagihan: " + self.money(total_val),
             bold=True, font_size="15sp", color=(0.05, 0.55, 0.25, 1),
-            halign="left", valign="middle"
+            halign="left", valign="middle", size_hint_y=None, height=dp(26)
         )
         self.popup_total_label.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
-        
+
+        # Input Uang Diterima
+        pay_row = BoxLayout(size_hint_y=None, height=dp(42), spacing=dp(8))
+        pay_lbl = Label(
+            text="Uang Diterima:", font_size="12sp", bold=True,
+            color=(0.10, 0.14, 0.20, 1), size_hint_x=None, width=dp(100),
+            halign="left", valign="middle"
+        )
+        pay_lbl.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
+
+        self.paid_input = TextInput(
+            hint_text="Masukkan uang pas/tunai", multiline=False,
+            input_filter="float", font_size="13sp", size_hint_y=1,
+            background_normal="", background_color=(0.95, 0.96, 0.98, 1),
+            foreground_color=(0.10, 0.14, 0.20, 1), cursor_color=(0.10, 0.40, 0.80, 1)
+        )
+        self.paid_input.bind(text=self.calculate_change)
+
+        pay_row.add_widget(pay_lbl)
+        pay_row.add_widget(self.paid_input)
+
+        # Label Kembalian
+        self.popup_change_label = Label(
+            text="Kembalian: Rp 0",
+            bold=True, font_size="14sp", color=(0.10, 0.40, 0.80, 1),
+            halign="left", valign="middle", size_hint_y=None, height=dp(26)
+        )
+        self.popup_change_label.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
+
         btn_pay = Button(
-            text="BAYAR", size_hint_x=None, width=dp(120),
+            text="PROSES BAYAR", size_hint_y=None, height=dp(40),
             background_normal="", background_color=(0.05, 0.60, 0.30, 1),
             color=(1, 1, 1, 1), bold=True
         )
         btn_pay.bind(on_release=lambda instance: self.checkout())
-        
-        footer.add_widget(self.popup_total_label)
-        footer.add_widget(btn_pay)
-        content.add_widget(footer)
+
+        checkout_box.add_widget(self.popup_total_label)
+        checkout_box.add_widget(pay_row)
+        checkout_box.add_widget(self.popup_change_label)
+        checkout_box.add_widget(btn_pay)
+
+        content.add_widget(checkout_box)
 
         self.cart_popup = WhitePopup(
             title="Keranjang Belanja",
             content=content,
-            size_hint=(0.92, 0.75)
+            size_hint=(0.92, 0.85)
         )
         self.refresh_cart_popup_grid()
         self.cart_popup.open()
+
+    def calculate_change(self, instance, text):
+        subtotal, discount, tax, total, paid, change = self.recalculate_pos()
+        try:
+            paid_amount = float(text) if text else 0
+        except ValueError:
+            paid_amount = 0
+
+        diff = paid_amount - total
+        if diff >= 0:
+            self.popup_change_label.text = f"Kembalian: {self.money(diff)}"
+            self.popup_change_label.color = (0.10, 0.40, 0.80, 1) # Blue
+        else:
+            self.popup_change_label.text = f"Kurang: {self.money(abs(diff))}"
+            self.popup_change_label.color = (0.80, 0.20, 0.20, 1) # Red
 
     def refresh_cart_popup_grid(self):
         if not self.cart_popup_grid:
@@ -686,7 +738,7 @@ class POSApp(App):
             lbl = Label(
                 text=f"{item['name']}\n{self.money(item['price'])} x {item['qty']:g} = {self.money(item['line_total'])}",
                 halign="left", valign="middle", 
-                color=(0.10, 0.14, 0.20, 1), # Hitam Pekat
+                color=(0.10, 0.14, 0.20, 1),
                 font_size="12sp", bold=True
             )
             lbl.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
@@ -713,7 +765,9 @@ class POSApp(App):
 
         subtotal, discount, tax, total, paid, change = self.recalculate_pos()
         if self.popup_total_label:
-            self.popup_total_label.text = "Total: " + self.money(total)
+            self.popup_total_label.text = "Total Tagihan: " + self.money(total)
+        if self.paid_input:
+            self.calculate_change(self.paid_input, self.paid_input.text)
 
     def change_qty(self, product_id, delta):
         for item in self.cart:
@@ -754,17 +808,38 @@ class POSApp(App):
         if not self.cart:
             self.info("Keranjang masih kosong.")
             return
+
         subtotal, discount, tax, total, paid, change = self.recalculate_pos()
+        
+        # Validasi Uang Diterima
+        paid_val = total
+        if self.paid_input and self.paid_input.text.strip():
+            try:
+                paid_val = float(self.paid_input.text)
+            except ValueError:
+                paid_val = 0
+
+        if paid_val < total:
+            self.info("Uang yang diterima kurang dari total belanja!")
+            return
+
+        change_val = paid_val - total
         payment = "Tunai"
+        
         invoice = self.db.save_sale(
-            self.cart, subtotal, discount, tax, total, paid, change, payment
+            self.cart, subtotal, discount, tax, total, paid_val, change_val, payment
         )
         self.cart = []
         if self.cart_popup:
             self.cart_popup.dismiss()
         self.refresh_all()
+        
         self.info(
-            f"Transaksi Berhasil!\n\nNota: {invoice}\nTotal: {self.money(total)}"
+            f"Transaksi Berhasil!\n\n"
+            f"Nota: {invoice}\n"
+            f"Total: {self.money(total)}\n"
+            f"Bayar: {self.money(paid_val)}\n"
+            f"Kembali: {self.money(change_val)}"
         )
 
     def refresh_products(self, search):
