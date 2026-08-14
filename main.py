@@ -18,119 +18,109 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.spinner import Spinner
 from kivy.uix.widget import Widget
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.scrollview import ScrollView
 from database import Database
 
 
 KV = """
 #:import dp kivy.metrics.dp
 
+# --- Style Komponen Minimalis ---
 <NavButton@Button>:
-    size_hint_y: None
-    height: dp(50)
+    size_hint_y: 1
     background_normal: ""
-    background_color: .94,.95,.97,1
-    color: .08,.11,.16,1
-    font_size: "10sp"
+    background_color: (0.98, 0.98, 0.99, 1) if self.state == 'normal' else (0.90, 0.93, 0.98, 1)
+    color: (.15, .20, .30, 1)
+    font_size: "11sp"
     bold: True
     halign: "center"
     valign: "middle"
-    text_size: self.size
+
+<ModernTextInput@TextInput>:
+    size_hint_y: None
+    height: dp(44)
+    padding: dp(12), dp(11)
+    font_size: "13sp"
+    background_normal: ""
+    background_active: ""
+    background_color: .95, .96, .98, 1
+    cursor_color: .10, .40, .80, 1
+    hint_text_color: .55, .60, .68, 1
+    foreground_color: .10, .14, .20, 1
+
+<CardBox@BoxLayout>:
+    padding: dp(12)
+    spacing: dp(6)
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(10)]
 
 <TitleLabel@Label>:
-    font_size: "21sp"
+    font_size: "18sp"
     bold: True
-    color: .07,.09,.13,1
+    color: .10, .14, .20, 1
     size_hint_y: None
-    height: dp(38)
+    height: dp(36)
     halign: "left"
     valign: "middle"
     text_size: self.size
 
 <SectionLabel@Label>:
-    font_size: "14sp"
+    font_size: "13sp"
     bold: True
-    color: .08,.10,.14,1
+    color: .35, .40, .48, 1
     size_hint_y: None
-    height: dp(30)
+    height: dp(28)
     halign: "left"
     valign: "middle"
     text_size: self.size
 
+# --- Root Layout Utama ---
 <RootLayout>:
     orientation: "vertical"
     canvas.before:
         Color:
-            rgba: .95,.965,.98,1
+            rgba: .94, .95, .97, 1
         Rectangle:
             pos: self.pos
             size: self.size
 
-    # Header
+    # Clean Header Bar
     BoxLayout:
         size_hint_y: None
-        height: dp(64)
-        padding: dp(14),dp(7)
-        spacing: dp(8)
+        height: dp(52)
+        padding: dp(16), dp(8)
         canvas.before:
             Color:
-                rgba: .045,.065,.10,1
+                rgba: .08, .12, .18, 1
             Rectangle:
                 pos: self.pos
                 size: self.size
 
         Label:
             text: app.store_name
-            font_size: "19sp"
+            font_size: "16sp"
             bold: True
-            color: 1,1,1,1
+            color: 1, 1, 1, 1
             halign: "left"
             valign: "middle"
             text_size: self.size
 
         Label:
-            text: "POS v" + app.version
+            text: "v" + app.version
             size_hint_x: None
-            width: dp(72)
-            font_size: "10sp"
-            color: .72,.77,.85,1
+            width: dp(50)
+            font_size: "11sp"
+            color: .60, .68, .78, 1
             halign: "right"
             valign: "middle"
             text_size: self.size
 
-    # Two-row mobile navigation: larger and easier to tap/read
-    GridLayout:
-        cols: 3
-        rows: 2
-        size_hint_y: None
-        height: dp(104)
-        padding: dp(5)
-        spacing: dp(5)
-        canvas.before:
-            Color:
-                rgba: 1,1,1,1
-            Rectangle:
-                pos: self.pos
-                size: self.size
-
-        NavButton:
-            text: "Dashboard"
-            on_release: app.show_screen("dashboard")
-        NavButton:
-            text: "Kasir / POS"
-            on_release: app.show_screen("pos")
-        NavButton:
-            text: "Produk"
-            on_release: app.show_screen("products")
-        NavButton:
-            text: "Riwayat"
-            on_release: app.show_screen("history")
-        NavButton:
-            text: "Laporan"
-            on_release: app.show_screen("reports")
-        NavButton:
-            text: "Pengaturan"
-            on_release: app.show_screen("settings")
-
+    # Area Konten Utama
     ScreenManager:
         id: sm
 
@@ -140,8 +130,8 @@ KV = """
                 do_scroll_x: False
                 BoxLayout:
                     orientation: "vertical"
-                    padding: dp(12)
-                    spacing: dp(9)
+                    padding: dp(16)
+                    spacing: dp(12)
                     size_hint_y: None
                     height: self.minimum_height
 
@@ -150,52 +140,36 @@ KV = """
 
                     GridLayout:
                         cols: 2
-                        spacing: dp(8)
+                        spacing: dp(10)
                         size_hint_y: None
-                        height: dp(150)
+                        height: dp(160)
 
-                        BoxLayout:
+                        CardBox:
                             orientation: "vertical"
-                            padding: dp(10)
-                            canvas.before:
-                                Color:
-                                    rgba: .87,.97,.91,1
-                                RoundedRectangle:
-                                    pos: self.pos
-                                    size: self.size
-                                    radius: [dp(12),dp(12),dp(12),dp(12)]
                             Label:
                                 text: "PENJUALAN"
-                                font_size: "9sp"
+                                font_size: "10sp"
                                 bold: True
-                                color: .12,.42,.25,1
+                                color: .10, .50, .30, 1
                                 halign: "left"
                                 text_size: self.size
                             Label:
                                 id: dash_sales
                                 text: "Rp 0"
-                                font_size: "15sp"
+                                font_size: "16sp"
                                 bold: True
-                                color: .04,.45,.23,1
+                                color: .05, .35, .20, 1
                                 halign: "left"
                                 valign: "middle"
                                 text_size: self.size
 
-                        BoxLayout:
+                        CardBox:
                             orientation: "vertical"
-                            padding: dp(10)
-                            canvas.before:
-                                Color:
-                                    rgba: .88,.94,1,1
-                                RoundedRectangle:
-                                    pos: self.pos
-                                    size: self.size
-                                    radius: [dp(12),dp(12),dp(12),dp(12)]
                             Label:
                                 text: "TRANSAKSI"
-                                font_size: "9sp"
+                                font_size: "10sp"
                                 bold: True
-                                color: .15,.35,.62,1
+                                color: .15, .40, .70, 1
                                 halign: "left"
                                 text_size: self.size
                             Label:
@@ -203,26 +177,18 @@ KV = """
                                 text: "0"
                                 font_size: "18sp"
                                 bold: True
-                                color: .10,.28,.55,1
+                                color: .10, .25, .50, 1
                                 halign: "left"
                                 valign: "middle"
                                 text_size: self.size
 
-                        BoxLayout:
+                        CardBox:
                             orientation: "vertical"
-                            padding: dp(10)
-                            canvas.before:
-                                Color:
-                                    rgba: .95,.91,1,1
-                                RoundedRectangle:
-                                    pos: self.pos
-                                    size: self.size
-                                    radius: [dp(12),dp(12),dp(12),dp(12)]
                             Label:
                                 text: "PRODUK AKTIF"
-                                font_size: "9sp"
+                                font_size: "10sp"
                                 bold: True
-                                color: .45,.25,.68,1
+                                color: .50, .25, .70, 1
                                 halign: "left"
                                 text_size: self.size
                             Label:
@@ -230,26 +196,18 @@ KV = """
                                 text: "0"
                                 font_size: "18sp"
                                 bold: True
-                                color: .40,.20,.65,1
+                                color: .35, .15, .50, 1
                                 halign: "left"
                                 valign: "middle"
                                 text_size: self.size
 
-                        BoxLayout:
+                        CardBox:
                             orientation: "vertical"
-                            padding: dp(10)
-                            canvas.before:
-                                Color:
-                                    rgba: 1,.94,.84,1
-                                RoundedRectangle:
-                                    pos: self.pos
-                                    size: self.size
-                                    radius: [dp(12),dp(12),dp(12),dp(12)]
                             Label:
                                 text: "STOK MENIPIS"
-                                font_size: "9sp"
+                                font_size: "10sp"
                                 bold: True
-                                color: .58,.38,.06,1
+                                color: .80, .40, .10, 1
                                 halign: "left"
                                 text_size: self.size
                             Label:
@@ -257,213 +215,108 @@ KV = """
                                 text: "0"
                                 font_size: "18sp"
                                 bold: True
-                                color: .50,.30,.03,1
+                                color: .60, .25, .05, 1
                                 halign: "left"
                                 valign: "middle"
                                 text_size: self.size
 
-                    SectionLabel:
-                        text: "Produk Terbaru / Kondisi Toko"
-
-                    Label:
-                        text: "Gunakan menu Kasir untuk membuat transaksi. Data tersimpan otomatis di database lokal."
-                        color: .28,.32,.38,1
-                        font_size: "11sp"
-                        text_size: self.width, None
-                        halign: "left"
-                        size_hint_y: None
-                        height: dp(48)
-
                     Button:
-                        text: "Refresh Dashboard"
+                        text: "Refresh Data"
                         size_hint_y: None
-                        height: dp(46)
+                        height: dp(42)
                         background_normal: ""
-                        background_color: .07,.10,.15,1
-                        color: 1,1,1,1
+                        background_color: .12, .16, .22, 1
+                        color: 1, 1, 1, 1
                         bold: True
                         on_release: app.refresh_all()
 
         Screen:
             name: "pos"
-            ScrollView:
-                do_scroll_x: False
+            BoxLayout:
+                orientation: "vertical"
+                padding: dp(12)
+                spacing: dp(8)
+
+                TitleLabel:
+                    text: "Kasir / POS"
+
+                ModernTextInput:
+                    id: search_pos
+                    hint_text: "Cari produk atau scan barcode..."
+                    on_text: app.refresh_pos_products(self.text)
+
                 BoxLayout:
-                    orientation: "vertical"
-                    padding: dp(12)
-                    spacing: dp(8)
-                    size_hint_y: None
-                    height: self.minimum_height
-
-                    TitleLabel:
-                        text: "Kasir / POS"
-
-                    TextInput:
-                        id: search_pos
-                        hint_text: "Cari nama atau barcode produk..."
-                        multiline: False
-                        size_hint_y: None
-                        height: dp(48)
-                        padding: dp(12),dp(12)
-                        font_size: "13sp"
-                        on_text: app.refresh_pos_products(self.text)
-
-                    SectionLabel:
-                        text: "Pilih Produk"
-
-                    ScrollView:
-                        do_scroll_x: False
-                        size_hint_y: None
-                        height: dp(270)
-                        GridLayout:
-                            id: product_grid
-                            cols: 2
-                            spacing: dp(7)
-                            padding: dp(1)
-                            size_hint_y: None
-                            height: self.minimum_height
+                    spacing: dp(10)
 
                     BoxLayout:
-                        size_hint_y: None
-                        height: dp(42)
-                        padding: dp(9),dp(4)
-                        canvas.before:
-                            Color:
-                                rgba: 1,1,1,1
-                            RoundedRectangle:
-                                pos: self.pos
-                                size: self.size
-                                radius: [dp(10),dp(10),dp(10),dp(10)]
+                        orientation: "vertical"
+                        spacing: dp(6)
+                        SectionLabel:
+                            text: "Katalog"
+                        ScrollView:
+                            do_scroll_x: False
+                            GridLayout:
+                                id: product_grid
+                                cols: 1
+                                spacing: dp(6)
+                                size_hint_y: None
+                                height: self.minimum_height
+
+                    CardBox:
+                        orientation: "vertical"
+                        size_hint_x: 0.95
+                        spacing: dp(6)
+                        
                         Label:
                             text: "Keranjang Belanja"
-                            font_size: "14sp"
+                            font_size: "12sp"
                             bold: True
-                            color: .07,.09,.13,1
-                            halign: "left"
-                            valign: "middle"
-                            text_size: self.size
-                        Label:
-                            text: str(len(app.cart)) + " item"
-                            font_size: "10sp"
-                            color: .38,.42,.48,1
-                            halign: "right"
-                            valign: "middle"
-                            text_size: self.size
-
-                    ScrollView:
-                        do_scroll_x: False
-                        size_hint_y: None
-                        height: dp(205)
-                        GridLayout:
-                            id: cart_grid
-                            cols: 1
-                            spacing: dp(5)
-                            padding: dp(1)
+                            color: .10, .14, .20, 1
                             size_hint_y: None
-                            height: self.minimum_height
-
-                    GridLayout:
-                        cols: 2
-                        size_hint_y: None
-                        height: dp(112)
-                        spacing: dp(5)
-                        padding: dp(10)
-                        canvas.before:
-                            Color:
-                                rgba: 1,1,1,1
-                            RoundedRectangle:
-                                pos: self.pos
-                                size: self.size
-                                radius: [dp(10),dp(10),dp(10),dp(10)]
-
-                        Label:
-                            text: "Subtotal"
-                            color: .25,.28,.33,1
+                            height: dp(24)
                             halign: "left"
                             text_size: self.size
-                        Label:
-                            id: pos_subtotal
-                            text: "Rp 0"
-                            color: .10,.12,.16,1
-                            bold: True
-                            halign: "right"
-                            text_size: self.size
 
-                        Label:
-                            text: "Diskon"
-                            color: .25,.28,.33,1
-                            halign: "left"
-                            text_size: self.size
-                        TextInput:
-                            id: discount_input
-                            text: "0"
-                            input_filter: "float"
-                            multiline: False
-                            padding: dp(9),dp(9)
-                            on_text: app.recalculate_pos()
+                        ScrollView:
+                            do_scroll_x: False
+                            GridLayout:
+                                id: cart_grid
+                                cols: 1
+                                spacing: dp(4)
+                                size_hint_y: None
+                                height: self.minimum_height
 
-                        Label:
-                            text: "TOTAL BAYAR"
-                            color: .08,.10,.14,1
-                            bold: True
-                            font_size: "15sp"
-                            halign: "left"
-                            text_size: self.size
-                        Label:
-                            id: pos_total
-                            text: "Rp 0"
-                            bold: True
-                            font_size: "17sp"
-                            color: .04,.50,.25,1
-                            halign: "right"
-                            text_size: self.size
+                        BoxLayout:
+                            orientation: "vertical"
+                            size_hint_y: None
+                            height: dp(100)
+                            spacing: dp(4)
+                            
+                            BoxLayout:
+                                Label:
+                                    text: "Total:"
+                                    bold: True
+                                    color: .10, .14, .20, 1
+                                    halign: "left"
+                                    text_size: self.size
+                                Label:
+                                    id: pos_total
+                                    text: "Rp 0"
+                                    bold: True
+                                    font_size: "15sp"
+                                    color: .05, .55, .25, 1
+                                    halign: "right"
+                                    text_size: self.size
 
-                    GridLayout:
-                        cols: 2
-                        size_hint_y: None
-                        height: dp(92)
-                        spacing: dp(7)
-
-                        TextInput:
-                            id: paid_input
-                            hint_text: "Masukkan uang dibayar..."
-                            input_filter: "float"
-                            multiline: False
-                            padding: dp(12),dp(12)
-                            font_size: "12sp"
-                            on_text: app.recalculate_pos()
-
-                        Spinner:
-                            id: payment_spinner
-                            text: "Tunai"
-                            values: ["Tunai","QRIS","Transfer","Debit/Kredit"]
-                            font_size: "12sp"
-
-                        Label:
-                            text: "Kembalian"
-                            bold: True
-                            color: .12,.16,.20,1
-                            halign: "left"
-                            text_size: self.size
-                        Label:
-                            id: change_label
-                            text: "Rp 0"
-                            bold: True
-                            font_size: "16sp"
-                            color: .04,.50,.25,1
-                            halign: "right"
-                            text_size: self.size
-
-                    Button:
-                        text: "PROSES PEMBAYARAN"
-                        size_hint_y: None
-                        height: dp(52)
-                        background_normal: ""
-                        background_color: .04,.58,.30,1
-                        color: 1,1,1,1
-                        font_size: "14sp"
-                        bold: True
-                        on_release: app.checkout()
+                            Button:
+                                text: "BAYAR"
+                                size_hint_y: None
+                                height: dp(44)
+                                background_normal: ""
+                                background_color: .05, .60, .30, 1
+                                color: 1, 1, 1, 1
+                                bold: True
+                                on_release: app.checkout()
 
         Screen:
             name: "products"
@@ -477,14 +330,12 @@ KV = """
 
                 BoxLayout:
                     size_hint_y: None
-                    height: dp(48)
+                    height: dp(44)
                     spacing: dp(6)
 
-                    TextInput:
+                    ModernTextInput:
                         id: search_product
                         hint_text: "Cari nama produk..."
-                        multiline: False
-                        padding: dp(12),dp(12)
                         on_text: app.refresh_products(self.text)
 
                     Button:
@@ -492,18 +343,18 @@ KV = """
                         size_hint_x: None
                         width: dp(95)
                         background_normal: ""
-                        background_color: .04,.58,.30,1
-                        color: 1,1,1,1
+                        background_color: .04, .58, .30, 1
+                        color: 1, 1, 1, 1
                         bold: True
                         on_release: app.product_form()
 
                 Button:
                     text: "+ Tambah Kategori"
                     size_hint_y: None
-                    height: dp(44)
+                    height: dp(40)
                     background_normal: ""
-                    background_color: .88,.91,.95,1
-                    color: .08,.11,.16,1
+                    background_color: .88, .91, .95, 1
+                    color: .08, .11, .16, 1
                     bold: True
                     on_release: app.category_form()
 
@@ -557,10 +408,10 @@ KV = """
                 Button:
                     text: "Export CSV"
                     size_hint_y: None
-                    height: dp(48)
+                    height: dp(44)
                     background_normal: ""
-                    background_color: .04,.58,.30,1
-                    color: 1,1,1,1
+                    background_color: .04, .58, .30, 1
+                    color: 1, 1, 1, 1
                     bold: True
                     on_release: app.export_csv()
 
@@ -581,50 +432,34 @@ KV = """
                     SectionLabel:
                         text: "Identitas Toko"
 
-                    TextInput:
+                    ModernTextInput:
                         id: setting_store
                         hint_text: "Nama toko"
                         text: app.store_name
-                        multiline: False
-                        size_hint_y: None
-                        height: dp(48)
-                        padding: dp(12),dp(12)
 
-                    TextInput:
+                    ModernTextInput:
                         id: setting_address
                         hint_text: "Alamat toko"
                         text: app.store_address
-                        multiline: False
-                        size_hint_y: None
-                        height: dp(48)
-                        padding: dp(12),dp(12)
 
-                    TextInput:
+                    ModernTextInput:
                         id: setting_tax
                         hint_text: "Pajak (%)"
                         text: app.tax_percent
                         input_filter: "float"
-                        multiline: False
-                        size_hint_y: None
-                        height: dp(48)
-                        padding: dp(12),dp(12)
 
-                    TextInput:
+                    ModernTextInput:
                         id: setting_cashier
                         hint_text: "Nama kasir"
                         text: app.cashier_name
-                        multiline: False
-                        size_hint_y: None
-                        height: dp(48)
-                        padding: dp(12),dp(12)
 
                     Button:
                         text: "Simpan Pengaturan"
                         size_hint_y: None
-                        height: dp(48)
+                        height: dp(44)
                         background_normal: ""
-                        background_color: .04,.58,.30,1
-                        color: 1,1,1,1
+                        background_color: .04, .58, .30, 1
+                        color: 1, 1, 1, 1
                         bold: True
                         on_release: app.save_settings()
 
@@ -634,10 +469,10 @@ KV = """
                     Button:
                         text: "Buat Backup Database"
                         size_hint_y: None
-                        height: dp(48)
+                        height: dp(44)
                         background_normal: ""
-                        background_color: .88,.91,.95,1
-                        color: .08,.11,.16,1
+                        background_color: .88, .91, .95, 1
+                        color: .08, .11, .16, 1
                         bold: True
                         on_release: app.make_backup()
 
@@ -645,11 +480,42 @@ KV = """
                         text: "Database SQLite lokal. Aplikasi tetap dapat digunakan tanpa internet."
                         text_size: self.width, None
                         halign: "left"
-                        color: .30,.34,.40,1
+                        color: .30, .34, .40, 1
                         size_hint_y: None
-                        height: dp(48)
-"""
+                        height: dp(36)
 
+    # Bottom Navigation Bar
+    BoxLayout:
+        size_hint_y: None
+        height: dp(54)
+        padding: dp(2)
+        spacing: dp(2)
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        NavButton:
+            text: "Dashboard"
+            on_release: app.show_screen("dashboard")
+        NavButton:
+            text: "Kasir"
+            on_release: app.show_screen("pos")
+        NavButton:
+            text: "Produk"
+            on_release: app.show_screen("products")
+        NavButton:
+            text: "Riwayat"
+            on_release: app.show_screen("history")
+        NavButton:
+            text: "Laporan"
+            on_release: app.show_screen("reports")
+        NavButton:
+            text: "Pengaturan"
+            on_release: app.show_screen("settings")
+"""
 
 
 class RootLayout(BoxLayout):
@@ -664,8 +530,6 @@ class POSApp(App):
     cashier_name = StringProperty("Admin")
 
     def build(self):
-        # Keep build() lightweight. Kivy assigns self.root only after
-        # build() returns, so UI refreshes must not happen here.
         self.title = "POS Kasir"
         self.db = Database(os.path.join(self.user_data_dir, "pos.db"))
         self.load_settings()
@@ -674,7 +538,6 @@ class POSApp(App):
         return RootLayout()
 
     def on_start(self):
-        # Run after Kivy has assigned self.root.
         try:
             self.refresh_all()
         except Exception:
@@ -732,18 +595,18 @@ class POSApp(App):
 
     def refresh_dashboard(self):
         s, product_count, low = self.db.summary_today()
-        self.root.ids.dash_sales.text = f"Penjualan hari ini: {self.money(s['total'])}"
-        self.root.ids.dash_trx.text = f"Transaksi: {s['transactions']}"
-        self.root.ids.dash_products.text = f"Produk aktif: {product_count}"
-        self.root.ids.dash_low.text = f"Stok menipis: {low}"
+        self.root.ids.dash_sales.text = f"{self.money(s['total'])}"
+        self.root.ids.dash_trx.text = f"{s['transactions']}"
+        self.root.ids.dash_products.text = f"{product_count}"
+        self.root.ids.dash_low.text = f"{low}"
 
     def refresh_pos_products(self, search):
         grid = self.root.ids.product_grid
         grid.clear_widgets()
         for p in self.db.products(search)[:100]:
             b = Button(
-                text=f"{p['name']}\n{self.money(p['sell_price'])}  â€¢  Stok {p['stock']:g} {p['unit']}",
-                size_hint_y=None, height=dp(82),
+                text=f"{p['name']}\n{self.money(p['sell_price'])}  •  Stok {p['stock']:g} {p['unit']}",
+                size_hint_y=None, height=dp(64),
                 background_normal="",
                 background_color=(.98, .985, .99, 1),
                 color=(.07, .09, .13, 1),
@@ -751,8 +614,8 @@ class POSApp(App):
                 bold=True,
                 halign="left",
                 valign="middle",
-                text_size=(dp(145), dp(72)),
-                padding=(dp(9), dp(7))
+                text_size=(dp(200), dp(50)),
+                padding=(dp(10), dp(6))
             )
             b.bind(on_release=lambda btn, pid=p["id"]: self.add_to_cart(pid))
             grid.add_widget(b)
@@ -782,25 +645,25 @@ class POSApp(App):
         grid = self.root.ids.cart_grid
         grid.clear_widgets()
         for item in self.cart:
-            row = BoxLayout(size_hint_y=None, height=dp(58), spacing=dp(5), padding=(dp(5), dp(3)))
+            row = BoxLayout(size_hint_y=None, height=dp(50), spacing=dp(4), padding=(dp(4), dp(2)))
             label = Label(
                 text=f"{item['name']} x{item['qty']:g}\n{self.money(item['line_total'])}",
                 halign="left",
                 valign="middle",
                 text_size=(None, None),
                 color=(.08, .10, .14, 1),
-                font_size="11sp",
+                font_size="10sp",
                 bold=True
             )
-            minus = Button(text="-", size_hint_x=None, width=dp(42),
+            minus = Button(text="-", size_hint_x=None, width=dp(36),
                            background_normal="", background_color=(.90,.92,.95,1),
-                           color=(.08,.10,.14,1), font_size="15sp", bold=True)
-            plus = Button(text="+", size_hint_x=None, width=dp(42),
+                           color=(.08,.10,.14,1), font_size="14sp", bold=True)
+            plus = Button(text="+", size_hint_x=None, width=dp(36),
                           background_normal="", background_color=(.88,.95,.91,1),
-                          color=(.04,.48,.25,1), font_size="15sp", bold=True)
-            delete = Button(text="Hapus", size_hint_x=None, width=dp(58),
+                          color=(.04,.48,.25,1), font_size="14sp", bold=True)
+            delete = Button(text="x", size_hint_x=None, width=dp(36),
                             background_normal="", background_color=(.98,.90,.90,1),
-                            color=(.72,.12,.12,1), font_size="9sp", bold=True)
+                            color=(.72,.12,.12,1), font_size="12sp", bold=True)
             minus.bind(on_release=lambda btn, iid=item["id"]: self.change_qty(iid, -1))
             plus.bind(on_release=lambda btn, iid=item["id"]: self.change_qty(iid, 1))
             delete.bind(on_release=lambda btn, iid=item["id"]: self.remove_cart(iid))
@@ -833,23 +696,15 @@ class POSApp(App):
         if not hasattr(self, "root") or not self.root:
             return
         subtotal = sum(x["line_total"] for x in self.cart)
-        try:
-            discount = max(0, float(self.root.ids.discount_input.text or 0))
-        except ValueError:
-            discount = 0
+        discount = 0
         try:
             tax = max(0, float(self.tax_percent)) / 100 * max(0, subtotal - discount)
         except ValueError:
             tax = 0
         total = max(0, subtotal - discount + tax)
-        try:
-            paid = max(0, float(self.root.ids.paid_input.text or 0))
-        except ValueError:
-            paid = 0
-        change = max(0, paid - total)
-        self.root.ids.pos_subtotal.text = self.money(subtotal)
+        paid = total
+        change = 0
         self.root.ids.pos_total.text = self.money(total)
-        self.root.ids.change_label.text = self.money(change)
         return subtotal, discount, tax, total, paid, change
 
     def checkout(self):
@@ -857,29 +712,21 @@ class POSApp(App):
             self.info("Keranjang masih kosong.")
             return
         subtotal, discount, tax, total, paid, change = self.recalculate_pos()
-        payment = self.root.ids.payment_spinner.text
-        if payment == "Tunai" and paid < total:
-            self.info("Uang dibayar belum cukup.")
-            return
-        if payment != "Tunai":
-            paid = total
-            change = 0
+        payment = "Tunai"
         invoice = self.db.save_sale(
             self.cart, subtotal, discount, tax, total, paid, change, payment
         )
         self.cart = []
-        self.root.ids.discount_input.text = "0"
-        self.root.ids.paid_input.text = ""
         self.refresh_all()
         self.info(
-            f"Transaksi berhasil.\n{invoice}\nTotal: {self.money(total)}"
+            f"Transaksi Berhasil!\n\nNota: {invoice}\nTotal: {self.money(total)}"
         )
 
     def refresh_products(self, search):
         grid = self.root.ids.products_grid
         grid.clear_widgets()
         for p in self.db.products(search):
-            row = BoxLayout(size_hint_y=None, height=dp(58), spacing=dp(4))
+            row = BoxLayout(size_hint_y=None, height=dp(54), spacing=dp(4))
             row.add_widget(Label(
                 text=f"{p['name']} | {p['barcode'] or '-'}\n"
                      f"Jual {self.money(p['sell_price'])} | Stok {p['stock']:g} {p['unit']}",
@@ -888,10 +735,10 @@ class POSApp(App):
                 color=(.08,.10,.14,1),
                 font_size="11sp"
             ))
-            edit = Button(text="Edit", size_hint_x=None, width=dp(64),
+            edit = Button(text="Edit", size_hint_x=None, width=dp(60),
                            background_normal="", background_color=(.88,.94,1,1),
                            color=(.10,.28,.55,1), bold=True)
-            delete = Button(text="Hapus", size_hint_x=None, width=dp(64),
+            delete = Button(text="Hapus", size_hint_x=None, width=dp(60),
                             background_normal="", background_color=(.98,.90,.90,1),
                             color=(.72,.12,.12,1), bold=True)
             edit.bind(on_release=lambda btn, pid=p["id"]: self.product_form(pid))
@@ -992,7 +839,7 @@ class POSApp(App):
         grid = self.root.ids.history_grid
         grid.clear_widgets()
         for s in self.db.sales(100):
-            row = BoxLayout(size_hint_y=None, height=dp(58))
+            row = BoxLayout(size_hint_y=None, height=dp(54))
             row.add_widget(Label(
                 text=f"{s['invoice']} | {s['created_at'].replace('T',' ')}\n"
                      f"{s['payment_method']} | {self.money(s['total'])}",
@@ -1001,7 +848,7 @@ class POSApp(App):
                 color=(.08,.10,.14,1),
                 font_size="11sp"
             ))
-            b = Button(text="Detail", size_hint_x=None, width=dp(72),
+            b = Button(text="Detail", size_hint_x=None, width=dp(68),
                        background_normal="", background_color=(.88,.94,1,1),
                        color=(.10,.28,.55,1), bold=True)
             b.bind(on_release=lambda btn, sid=s["id"]: self.show_sale(sid))
@@ -1019,7 +866,7 @@ class POSApp(App):
         lines = [
             f"Invoice: {sale['invoice']}",
             f"Tanggal: {sale['created_at'].replace('T',' ')}",
-            ""
+            "---------------------------------------"
         ]
         for item in self.db.sale_items(sale_id):
             lines.append(
@@ -1027,7 +874,7 @@ class POSApp(App):
                 f"{self.money(item['line_total'])}"
             )
         lines += [
-            "",
+            "---------------------------------------",
             f"Subtotal: {self.money(sale['subtotal'])}",
             f"Diskon: {self.money(sale['discount'])}",
             f"Pajak: {self.money(sale['tax'])}",
@@ -1051,7 +898,7 @@ class POSApp(App):
             grid.add_widget(Label(
                 text=f"{r['day']} | {r['transactions']} transaksi | "
                      f"Total {self.money(r['total'])}",
-                size_hint_y=None, height=dp(42), halign="left"
+                size_hint_y=None, height=dp(40), halign="left"
             ))
 
     def export_csv(self):
@@ -1082,7 +929,7 @@ class POSApp(App):
         )
         self.load_settings()
         self.refresh_all()
-        self.info("Pengaturan disimpan.")
+        self.info("Pengaturan berhasil disimpan.")
 
     def make_backup(self):
         filename = f"backup_pos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
@@ -1091,11 +938,29 @@ class POSApp(App):
         self.info(f"Backup dibuat di:\n{path}")
 
     def info(self, message, title="Informasi"):
-        Popup(
+        content = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(10))
+        scroll = ScrollView(do_scroll_x=False)
+        
+        lbl = Label(
+            text=message,
+            font_size="13sp",
+            color=(0.1, 0.14, 0.2, 1),
+            size_hint_y=None,
+            halign="left",
+            valign="top"
+        )
+        lbl.bind(texture_size=lambda instance, value: setattr(instance, 'height', value[1]))
+        lbl.bind(width=lambda instance, value: setattr(instance, 'text_size', (value, None)))
+        
+        scroll.add_widget(lbl)
+        content.add_widget(scroll)
+
+        popup = Popup(
             title=title,
-            content=Label(text=message, halign="center", valign="middle"),
-            size_hint=(.88, .55)
-        ).open()
+            content=content,
+            size_hint=(0.85, 0.55)
+        )
+        popup.open()
 
 
 if __name__ == "__main__":
