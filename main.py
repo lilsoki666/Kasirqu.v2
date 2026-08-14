@@ -79,11 +79,11 @@ KV = """
     valign: "middle"
     text_size: self.size
 
-# --- Custom White Popup Style ---
+# --- Style Popup Serba Putih Global ---
 <WhitePopup>:
     background_color: 1, 1, 1, 1
     background: ""
-    title_color: 0.1, 0.14, 0.2, 1
+    title_color: 0.10, 0.14, 0.20, 1
     title_size: "16sp"
     separator_color: 0.85, 0.88, 0.92, 1
 
@@ -667,7 +667,6 @@ class POSApp(App):
         footer.add_widget(btn_pay)
         content.add_widget(footer)
 
-        # Menggunakan WhitePopup (Latar Belakang Putih)
         self.cart_popup = WhitePopup(
             title="Keranjang Belanja",
             content=content,
@@ -682,10 +681,8 @@ class POSApp(App):
         
         self.cart_popup_grid.clear_widgets()
         for item in self.cart:
-            # Baris item simpel & bersih tanpa grafis berantakan
             row = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(6))
 
-            # Teks Nama Produk & Harga Berwarna Hitam Pekat (Tampak Jelas)
             lbl = Label(
                 text=f"{item['name']}\n{self.money(item['price'])} x {item['qty']:g} = {self.money(item['line_total'])}",
                 halign="left", valign="middle", 
