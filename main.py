@@ -26,15 +26,16 @@ KV = """
 
 <NavButton@Button>:
     size_hint_y: None
-    height: dp(50)
+    height: dp(76)
     background_normal: ""
-    background_color: .94,.95,.97,1
+    background_color: .98,.985,.995,1
     color: .08,.11,.16,1
     font_size: "10sp"
     bold: True
     halign: "center"
     valign: "middle"
     text_size: self.size
+    padding: dp(2),dp(3)
 
 <TitleLabel@Label>:
     font_size: "21sp"
@@ -97,14 +98,13 @@ KV = """
             valign: "middle"
             text_size: self.size
 
-    # Two-row mobile navigation: larger and easier to tap/read
+    # One-row icon navigation for mobile
     GridLayout:
-        cols: 3
-        rows: 2
+        cols: 6
         size_hint_y: None
-        height: dp(104)
-        padding: dp(5)
-        spacing: dp(5)
+        height: dp(82)
+        padding: dp(4),dp(3)
+        spacing: dp(2)
         canvas.before:
             Color:
                 rgba: 1,1,1,1
@@ -113,22 +113,33 @@ KV = """
                 size: self.size
 
         NavButton:
-            text: "Dashboard"
+            text: "âŒ‚\nDashboard"
+            font_size: "10sp"
             on_release: app.show_screen("dashboard")
+
         NavButton:
-            text: "Kasir / POS"
+            text: "â–£\nKasir / POS"
+            font_size: "10sp"
             on_release: app.show_screen("pos")
+
         NavButton:
-            text: "Produk"
+            text: "â¬¡\nProduk"
+            font_size: "10sp"
             on_release: app.show_screen("products")
+
         NavButton:
-            text: "Riwayat"
+            text: "â—·\nRiwayat"
+            font_size: "10sp"
             on_release: app.show_screen("history")
+
         NavButton:
-            text: "Laporan"
+            text: "â–¤\nLaporan"
+            font_size: "10sp"
             on_release: app.show_screen("reports")
+
         NavButton:
-            text: "Pengaturan"
+            text: "âš™\nPengaturan"
+            font_size: "10sp"
             on_release: app.show_screen("settings")
 
     ScreenManager:
@@ -141,7 +152,7 @@ KV = """
                 BoxLayout:
                     orientation: "vertical"
                     padding: dp(12)
-                    spacing: dp(9)
+                    spacing: dp(8)
                     size_hint_y: None
                     height: self.minimum_height
 
