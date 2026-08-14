@@ -23,29 +23,31 @@ from database import Database
 
 KV = """
 #:import dp kivy.metrics.dp
-#:import sp kivy.metrics.sp
 
 <NavButton@Button>:
-    size_hint_y: None
-    height: dp(52)
+    size_hint_x: None
+    width: dp(112)
+    size_hint_y: 1
     background_normal: ""
     background_color: .10,.13,.18,1
     color: .92,.95,1,1
-    font_size: "14sp"
+    font_size: "13sp"
     bold: True
 
 <TitleLabel@Label>:
-    font_size: "24sp"
+    font_size: "23sp"
     bold: True
-    color: .10,.13,.18,1
+    color: .08,.10,.14,1
     size_hint_y: None
-    height: dp(48)
+    height: dp(44)
     halign: "left"
     valign: "middle"
     text_size: self.size
 
 <RootLayout>:
     orientation: "vertical"
+    padding: 0
+    spacing: 0
     canvas.before:
         Color:
             rgba: .94,.95,.97,1
@@ -53,15 +55,14 @@ KV = """
             pos: self.pos
             size: self.size
 
-    # ===== TOP BAR =====
+    # HEADER
     BoxLayout:
         size_hint_y: None
-        height: dp(64)
-        padding: dp(14), dp(8)
-        spacing: dp(10)
+        height: dp(62)
+        padding: dp(14), dp(5)
         canvas.before:
             Color:
-                rgba: .06,.08,.11,1
+                rgba: .05,.07,.10,1
             Rectangle:
                 pos: self.pos
                 size: self.size
@@ -79,567 +80,531 @@ KV = """
             text: "POS v" + app.version
             size_hint_x: None
             width: dp(82)
-            font_size: "12sp"
-            color: .72,.76,.82,1
+            font_size: "11sp"
+            color: .70,.74,.82,1
             halign: "right"
             valign: "middle"
             text_size: self.size
 
-    # ===== MAIN AREA =====
+    # MOBILE NAVIGATION - NO LEFT SIDEBAR
     BoxLayout:
-        orientation: "horizontal"
-        padding: dp(8)
-        spacing: dp(8)
+        size_hint_y: None
+        height: dp(58)
+        padding: dp(5), dp(5)
+        spacing: dp(5)
+        canvas.before:
+            Color:
+                rgba: .10,.12,.16,1
+            Rectangle:
+                pos: self.pos
+                size: self.size
 
-        # ===== SIDEBAR =====
-        BoxLayout:
-            orientation: "vertical"
-            size_hint_x: None
-            width: dp(172)
-            padding: dp(7)
-            spacing: dp(7)
-            canvas.before:
-                Color:
-                    rgba: .10,.12,.16,1
-                RoundedRectangle:
-                    pos: self.pos
-                    size: self.size
-                    radius: [dp(12), dp(12), dp(12), dp(12)]
+        NavButton:
+            text: "Dashboard"
+            on_release: app.show_screen("dashboard")
+        NavButton:
+            text: "Kasir"
+            on_release: app.show_screen("pos")
+        NavButton:
+            text: "Produk"
+            on_release: app.show_screen("products")
+        NavButton:
+            text: "Riwayat"
+            on_release: app.show_screen("history")
+        NavButton:
+            text: "Laporan"
+            on_release: app.show_screen("reports")
+        NavButton:
+            text: "Pengaturan"
+            on_release: app.show_screen("settings")
 
-            Label:
-                text: "MENU UTAMA"
-                size_hint_y: None
-                height: dp(36)
-                font_size: "11sp"
-                bold: True
-                color: .58,.63,.70,1
-                halign: "left"
-                valign: "middle"
-                text_size: self.size
+    ScreenManager:
+        id: sm
 
-            NavButton:
-                text: "Dashboard"
-                on_release: app.show_screen("dashboard")
-            NavButton:
-                text: "Kasir / POS"
-                on_release: app.show_screen("pos")
-            NavButton:
-                text: "Produk"
-                on_release: app.show_screen("products")
-            NavButton:
-                text: "Riwayat"
-                on_release: app.show_screen("history")
-            NavButton:
-                text: "Laporan"
-                on_release: app.show_screen("reports")
-            NavButton:
-                text: "Pengaturan"
-                on_release: app.show_screen("settings")
-
-            Widget:
-
-        # ===== CONTENT =====
-        ScreenManager:
-            id: sm
-
-            # ================= DASHBOARD =================
-            Screen:
-                name: "dashboard"
-                ScrollView:
-                    do_scroll_x: False
-                    BoxLayout:
-                        orientation: "vertical"
-                        padding: dp(18)
-                        spacing: dp(12)
-                        size_hint_y: None
-                        height: self.minimum_height
-
-                        TitleLabel:
-                            text: "Dashboard"
-
-                        Label:
-                            text: "Ringkasan aktivitas toko hari ini"
-                            size_hint_y: None
-                            height: dp(28)
-                            color: .42,.46,.52,1
-                            font_size: "13sp"
-                            halign: "left"
-                            text_size: self.size
-
-                        GridLayout:
-                            cols: 2
-                            spacing: dp(10)
-                            size_hint_y: None
-                            height: dp(150)
-
-                            BoxLayout:
-                                orientation: "vertical"
-                                padding: dp(14)
-                                canvas.before:
-                                    Color:
-                                        rgba: 1,1,1,1
-                                    RoundedRectangle:
-                                        pos: self.pos
-                                        size: self.size
-                                        radius: [dp(12),dp(12),dp(12),dp(12)]
-                                Label:
-                                    text: "PENJUALAN HARI INI"
-                                    font_size: "11sp"
-                                    bold: True
-                                    color: .42,.46,.52,1
-                                    halign: "left"
-                                    text_size: self.size
-                                Label:
-                                    id: dash_sales
-                                    text: "Rp 0"
-                                    font_size: "22sp"
-                                    bold: True
-                                    color: .08,.35,.22,1
-                                    halign: "left"
-                                    valign: "middle"
-                                    text_size: self.size
-
-                            BoxLayout:
-                                orientation: "vertical"
-                                padding: dp(14)
-                                canvas.before:
-                                    Color:
-                                        rgba: 1,1,1,1
-                                    RoundedRectangle:
-                                        pos: self.pos
-                                        size: self.size
-                                        radius: [dp(12),dp(12),dp(12),dp(12)]
-                                Label:
-                                    text: "TRANSAKSI"
-                                    font_size: "11sp"
-                                    bold: True
-                                    color: .42,.46,.52,1
-                                    halign: "left"
-                                    text_size: self.size
-                                Label:
-                                    id: dash_trx
-                                    text: "0"
-                                    font_size: "22sp"
-                                    bold: True
-                                    halign: "left"
-                                    text_size: self.size
-
-                            BoxLayout:
-                                orientation: "vertical"
-                                padding: dp(14)
-                                canvas.before:
-                                    Color:
-                                        rgba: 1,1,1,1
-                                    RoundedRectangle:
-                                        pos: self.pos
-                                        size: self.size
-                                        radius: [dp(12),dp(12),dp(12),dp(12)]
-                                Label:
-                                    text: "PRODUK AKTIF"
-                                    font_size: "11sp"
-                                    bold: True
-                                    color: .42,.46,.52,1
-                                    halign: "left"
-                                    text_size: self.size
-                                Label:
-                                    id: dash_products
-                                    text: "0"
-                                    font_size: "22sp"
-                                    bold: True
-                                    halign: "left"
-                                    text_size: self.size
-
-                            BoxLayout:
-                                orientation: "vertical"
-                                padding: dp(14)
-                                canvas.before:
-                                    Color:
-                                        rgba: 1,1,1,1
-                                    RoundedRectangle:
-                                        pos: self.pos
-                                        size: self.size
-                                        radius: [dp(12),dp(12),dp(12),dp(12)]
-                                Label:
-                                    text: "STOK MENIPIS"
-                                    font_size: "11sp"
-                                    bold: True
-                                    color: .42,.46,.52,1
-                                    halign: "left"
-                                    text_size: self.size
-                                Label:
-                                    id: dash_low
-                                    text: "0"
-                                    font_size: "22sp"
-                                    bold: True
-                                    color: .65,.25,.08,1
-                                    halign: "left"
-                                    text_size: self.size
-
-                        Button:
-                            text: "REFRESH DASHBOARD"
-                            size_hint_y: None
-                            height: dp(48)
-                            background_normal: ""
-                            background_color: .10,.13,.18,1
-                            color: 1,1,1,1
-                            bold: True
-                            on_release: app.refresh_all()
-
-            # ================= POS =================
-            Screen:
-                name: "pos"
-                BoxLayout:
-                    padding: dp(12)
-                    spacing: dp(12)
-                    orientation: "horizontal"
-
-                    # PRODUCT PANEL
-                    BoxLayout:
-                        orientation: "vertical"
-                        spacing: dp(8)
-
-                        Label:
-                            text: "PILIH PRODUK"
-                            size_hint_y: None
-                            height: dp(34)
-                            font_size: "16sp"
-                            bold: True
-                            color: .10,.13,.18,1
-                            halign: "left"
-                            text_size: self.size
-
-                        TextInput:
-                            id: search_pos
-                            hint_text: "Cari nama produk / barcode..."
-                            multiline: False
-                            size_hint_y: None
-                            height: dp(48)
-                            padding: dp(12), dp(12)
-                            font_size: "14sp"
-                            on_text: app.refresh_pos_products(self.text)
-
-                        ScrollView:
-                            do_scroll_x: False
-                            GridLayout:
-                                id: product_grid
-                                cols: 1
-                                spacing: dp(7)
-                                padding: dp(2)
-                                size_hint_y: None
-                                height: self.minimum_height
-
-                    # CART PANEL
-                    BoxLayout:
-                        orientation: "vertical"
-                        size_hint_x: .62
-                        spacing: dp(7)
-                        padding: dp(12)
-                        canvas.before:
-                            Color:
-                                rgba: 1,1,1,1
-                            RoundedRectangle:
-                                pos: self.pos
-                                size: self.size
-                                radius: [dp(12),dp(12),dp(12),dp(12)]
-
-                        Label:
-                            text: "KERANJANG BELANJA"
-                            size_hint_y: None
-                            height: dp(34)
-                            font_size: "16sp"
-                            bold: True
-                            color: .10,.13,.18,1
-                            halign: "left"
-                            text_size: self.size
-
-                        ScrollView:
-                            do_scroll_x: False
-                            GridLayout:
-                                id: cart_grid
-                                cols: 1
-                                spacing: dp(6)
-                                size_hint_y: None
-                                height: self.minimum_height
-
-                        GridLayout:
-                            cols: 2
-                            spacing: dp(6)
-                            size_hint_y: None
-                            height: dp(118)
-
-                            Label:
-                                text: "Subtotal"
-                                halign: "left"
-                                text_size: self.size
-                            Label:
-                                id: pos_subtotal
-                                text: "Rp 0"
-                                bold: True
-                                halign: "right"
-                                text_size: self.size
-
-                            Label:
-                                text: "Diskon"
-                                halign: "left"
-                                text_size: self.size
-                            TextInput:
-                                id: discount_input
-                                text: "0"
-                                input_filter: "float"
-                                multiline: False
-                                on_text: app.recalculate_pos()
-
-                            Label:
-                                text: "TOTAL"
-                                bold: True
-                                font_size: "16sp"
-                                halign: "left"
-                                text_size: self.size
-                            Label:
-                                id: pos_total
-                                text: "Rp 0"
-                                bold: True
-                                font_size: "18sp"
-                                halign: "right"
-                                text_size: self.size
-
-                        GridLayout:
-                            cols: 2
-                            spacing: dp(6)
-                            size_hint_y: None
-                            height: dp(94)
-
-                            TextInput:
-                                id: paid_input
-                                hint_text: "Uang dibayar"
-                                input_filter: "float"
-                                multiline: False
-                                on_text: app.recalculate_pos()
-
-                            Spinner:
-                                id: payment_spinner
-                                text: "Tunai"
-                                values: ["Tunai","QRIS","Transfer","Debit/Kredit"]
-
-                            Label:
-                                text: "Kembalian"
-                                bold: True
-                                halign: "left"
-                                text_size: self.size
-                            Label:
-                                id: change_label
-                                text: "Rp 0"
-                                bold: True
-                                halign: "right"
-                                text_size: self.size
-
-                        Button:
-                            text: "PROSES PEMBAYARAN"
-                            size_hint_y: None
-                            height: dp(54)
-                            background_normal: ""
-                            background_color: .08,.45,.27,1
-                            color: 1,1,1,1
-                            bold: True
-                            font_size: "15sp"
-                            on_release: app.checkout()
-
-            # ================= PRODUCTS =================
-            Screen:
-                name: "products"
+        # DASHBOARD
+        Screen:
+            name: "dashboard"
+            ScrollView:
+                do_scroll_x: False
                 BoxLayout:
                     orientation: "vertical"
                     padding: dp(16)
-                    spacing: dp(8)
-
-                    BoxLayout:
-                        size_hint_y: None
-                        height: dp(50)
-                        spacing: dp(7)
-
-                        TextInput:
-                            id: search_product
-                            hint_text: "Cari produk..."
-                            multiline: False
-                            padding: dp(12),dp(12)
-                            on_text: app.refresh_products(self.text)
-
-                        Button:
-                            text: "+ PRODUK"
-                            size_hint_x: None
-                            width: dp(105)
-                            background_normal: ""
-                            background_color: .08,.45,.27,1
-                            color: 1,1,1,1
-                            bold: True
-                            on_release: app.product_form()
-
-                        Button:
-                            text: "+ KATEGORI"
-                            size_hint_x: None
-                            width: dp(115)
-                            background_normal: ""
-                            background_color: .10,.13,.18,1
-                            color: 1,1,1,1
-                            bold: True
-                            on_release: app.category_form()
-
-                    ScrollView:
-                        do_scroll_x: False
-                        GridLayout:
-                            id: products_grid
-                            cols: 1
-                            spacing: dp(7)
-                            size_hint_y: None
-                            height: self.minimum_height
-
-            # ================= HISTORY =================
-            Screen:
-                name: "history"
-                BoxLayout:
-                    orientation: "vertical"
-                    padding: dp(16)
-                    spacing: dp(8)
+                    spacing: dp(10)
+                    size_hint_y: None
+                    height: self.minimum_height
 
                     TitleLabel:
-                        text: "Riwayat Transaksi"
+                        text: "Dashboard"
 
                     Label:
-                        text: "Daftar transaksi terbaru"
+                        text: "Ringkasan aktivitas toko"
                         size_hint_y: None
-                        height: dp(26)
-                        color: .42,.46,.52,1
+                        height: dp(25)
+                        color: .43,.47,.54,1
                         halign: "left"
                         text_size: self.size
 
-                    ScrollView:
-                        do_scroll_x: False
-                        GridLayout:
-                            id: history_grid
-                            cols: 1
-                            spacing: dp(7)
-                            size_hint_y: None
-                            height: self.minimum_height
+                    GridLayout:
+                        cols: 1
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(380)
 
-            # ================= REPORTS =================
-            Screen:
-                name: "reports"
-                BoxLayout:
-                    orientation: "vertical"
-                    padding: dp(16)
-                    spacing: dp(8)
+                        BoxLayout:
+                            orientation: "vertical"
+                            padding: dp(15)
+                            canvas.before:
+                                Color:
+                                    rgba: 1,1,1,1
+                                RoundedRectangle:
+                                    pos: self.pos
+                                    size: self.size
+                                    radius: [dp(12),dp(12),dp(12),dp(12)]
+                            Label:
+                                text: "PENJUALAN HARI INI"
+                                font_size: "11sp"
+                                bold: True
+                                color: .43,.47,.54,1
+                                halign: "left"
+                                text_size: self.size
+                            Label:
+                                id: dash_sales
+                                text: "Rp 0"
+                                font_size: "24sp"
+                                bold: True
+                                color: .08,.40,.24,1
+                                halign: "left"
+                                text_size: self.size
 
-                    TitleLabel:
-                        text: "Laporan 30 Hari"
+                        BoxLayout:
+                            orientation: "vertical"
+                            padding: dp(15)
+                            canvas.before:
+                                Color:
+                                    rgba: 1,1,1,1
+                                RoundedRectangle:
+                                    pos: self.pos
+                                    size: self.size
+                                    radius: [dp(12),dp(12),dp(12),dp(12)]
+                            Label:
+                                text: "TRANSAKSI"
+                                font_size: "11sp"
+                                bold: True
+                                color: .43,.47,.54,1
+                                halign: "left"
+                                text_size: self.size
+                            Label:
+                                id: dash_trx
+                                text: "0"
+                                font_size: "24sp"
+                                bold: True
+                                halign: "left"
+                                text_size: self.size
 
-                    ScrollView:
-                        do_scroll_x: False
-                        GridLayout:
-                            id: report_grid
-                            cols: 1
-                            spacing: dp(7)
-                            size_hint_y: None
-                            height: self.minimum_height
+                        BoxLayout:
+                            orientation: "vertical"
+                            padding: dp(15)
+                            canvas.before:
+                                Color:
+                                    rgba: 1,1,1,1
+                                RoundedRectangle:
+                                    pos: self.pos
+                                    size: self.size
+                                    radius: [dp(12),dp(12),dp(12),dp(12)]
+                            Label:
+                                text: "PRODUK AKTIF"
+                                font_size: "11sp"
+                                bold: True
+                                color: .43,.47,.54,1
+                                halign: "left"
+                                text_size: self.size
+                            Label:
+                                id: dash_products
+                                text: "0"
+                                font_size: "24sp"
+                                bold: True
+                                halign: "left"
+                                text_size: self.size
+
+                        BoxLayout:
+                            orientation: "vertical"
+                            padding: dp(15)
+                            canvas.before:
+                                Color:
+                                    rgba: 1,1,1,1
+                                RoundedRectangle:
+                                    pos: self.pos
+                                    size: self.size
+                                    radius: [dp(12),dp(12),dp(12),dp(12)]
+                            Label:
+                                text: "STOK MENIPIS"
+                                font_size: "11sp"
+                                bold: True
+                                color: .43,.47,.54,1
+                                halign: "left"
+                                text_size: self.size
+                            Label:
+                                id: dash_low
+                                text: "0"
+                                font_size: "24sp"
+                                bold: True
+                                color: .68,.28,.08,1
+                                halign: "left"
+                                text_size: self.size
 
                     Button:
-                        text: "EXPORT CSV"
+                        text: "REFRESH DASHBOARD"
                         size_hint_y: None
                         height: dp(50)
                         background_normal: ""
                         background_color: .10,.13,.18,1
                         color: 1,1,1,1
                         bold: True
-                        on_release: app.export_csv()
+                        on_release: app.refresh_all()
 
-            # ================= SETTINGS =================
-            Screen:
-                name: "settings"
+        # POS - PORTRAIT FIRST
+        Screen:
+            name: "pos"
+            BoxLayout:
+                orientation: "vertical"
+                padding: dp(10)
+                spacing: dp(9)
+
+                # PRODUCTS
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint_y: .47
+                    spacing: dp(7)
+
+                    Label:
+                        text: "PILIH PRODUK"
+                        size_hint_y: None
+                        height: dp(34)
+                        font_size: "17sp"
+                        bold: True
+                        color: .08,.10,.14,1
+                        halign: "left"
+                        text_size: self.size
+
+                    TextInput:
+                        id: search_pos
+                        hint_text: "Cari nama produk / barcode..."
+                        multiline: False
+                        size_hint_y: None
+                        height: dp(48)
+                        padding: dp(12), dp(11)
+                        font_size: "14sp"
+                        on_text: app.refresh_pos_products(self.text)
+
+                    ScrollView:
+                        do_scroll_x: False
+                        GridLayout:
+                            id: product_grid
+                            cols: 1
+                            spacing: dp(7)
+                            padding: dp(1)
+                            size_hint_y: None
+                            height: self.minimum_height
+
+                # CART
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint_y: .53
+                    padding: dp(11)
+                    spacing: dp(7)
+                    canvas.before:
+                        Color:
+                            rgba: 1,1,1,1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(12),dp(12),dp(12),dp(12)]
+
+                    Label:
+                        text: "KERANJANG BELANJA"
+                        size_hint_y: None
+                        height: dp(32)
+                        font_size: "16sp"
+                        bold: True
+                        color: .08,.10,.14,1
+                        halign: "left"
+                        text_size: self.size
+
+                    ScrollView:
+                        do_scroll_x: False
+                        GridLayout:
+                            id: cart_grid
+                            cols: 1
+                            spacing: dp(5)
+                            size_hint_y: None
+                            height: self.minimum_height
+
+                    GridLayout:
+                        cols: 2
+                        spacing: dp(5)
+                        size_hint_y: None
+                        height: dp(105)
+
+                        Label:
+                            text: "Subtotal"
+                            halign: "left"
+                            text_size: self.size
+                        Label:
+                            id: pos_subtotal
+                            text: "Rp 0"
+                            bold: True
+                            halign: "right"
+                            text_size: self.size
+
+                        Label:
+                            text: "Diskon"
+                            halign: "left"
+                            text_size: self.size
+                        TextInput:
+                            id: discount_input
+                            text: "0"
+                            input_filter: "float"
+                            multiline: False
+                            on_text: app.recalculate_pos()
+
+                        Label:
+                            text: "TOTAL"
+                            bold: True
+                            font_size: "16sp"
+                            halign: "left"
+                            text_size: self.size
+                        Label:
+                            id: pos_total
+                            text: "Rp 0"
+                            bold: True
+                            font_size: "18sp"
+                            halign: "right"
+                            text_size: self.size
+
+                    GridLayout:
+                        cols: 2
+                        spacing: dp(5)
+                        size_hint_y: None
+                        height: dp(82)
+
+                        TextInput:
+                            id: paid_input
+                            hint_text: "Uang dibayar"
+                            input_filter: "float"
+                            multiline: False
+                            on_text: app.recalculate_pos()
+
+                        Spinner:
+                            id: payment_spinner
+                            text: "Tunai"
+                            values: ["Tunai","QRIS","Transfer","Debit/Kredit"]
+
+                        Label:
+                            text: "Kembalian"
+                            bold: True
+                            halign: "left"
+                            text_size: self.size
+                        Label:
+                            id: change_label
+                            text: "Rp 0"
+                            bold: True
+                            halign: "right"
+                            text_size: self.size
+
+                    Button:
+                        text: "PROSES PEMBAYARAN"
+                        size_hint_y: None
+                        height: dp(52)
+                        background_normal: ""
+                        background_color: .07,.45,.27,1
+                        color: 1,1,1,1
+                        bold: True
+                        font_size: "15sp"
+                        on_release: app.checkout()
+
+        # PRODUCTS
+        Screen:
+            name: "products"
+            BoxLayout:
+                orientation: "vertical"
+                padding: dp(14)
+                spacing: dp(8)
+
+                TitleLabel:
+                    text: "Produk"
+
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(48)
+                    spacing: dp(6)
+
+                    TextInput:
+                        id: search_product
+                        hint_text: "Cari produk..."
+                        multiline: False
+                        padding: dp(11),dp(11)
+                        on_text: app.refresh_products(self.text)
+
+                    Button:
+                        text: "+ PRODUK"
+                        size_hint_x: None
+                        width: dp(102)
+                        background_normal: ""
+                        background_color: .07,.45,.27,1
+                        color: 1,1,1,1
+                        bold: True
+                        on_release: app.product_form()
+
+                Button:
+                    text: "+ KATEGORI"
+                    size_hint_y: None
+                    height: dp(44)
+                    background_normal: ""
+                    background_color: .10,.13,.18,1
+                    color: 1,1,1,1
+                    bold: True
+                    on_release: app.category_form()
+
                 ScrollView:
                     do_scroll_x: False
-                    BoxLayout:
-                        orientation: "vertical"
-                        padding: dp(18)
-                        spacing: dp(10)
+                    GridLayout:
+                        id: products_grid
+                        cols: 1
+                        spacing: dp(7)
                         size_hint_y: None
                         height: self.minimum_height
 
-                        TitleLabel:
-                            text: "Pengaturan"
+        # HISTORY
+        Screen:
+            name: "history"
+            BoxLayout:
+                orientation: "vertical"
+                padding: dp(14)
+                spacing: dp(7)
 
-                        Label:
-                            text: "Informasi toko dan konfigurasi kasir"
-                            size_hint_y: None
-                            height: dp(26)
-                            color: .42,.46,.52,1
-                            halign: "left"
-                            text_size: self.size
+                TitleLabel:
+                    text: "Riwayat Transaksi"
 
-                        TextInput:
-                            id: setting_store
-                            hint_text: "Nama toko"
-                            text: app.store_name
-                            multiline: False
-                            size_hint_y: None
-                            height: dp(48)
-                            padding: dp(12),dp(12)
+                ScrollView:
+                    do_scroll_x: False
+                    GridLayout:
+                        id: history_grid
+                        cols: 1
+                        spacing: dp(7)
+                        size_hint_y: None
+                        height: self.minimum_height
 
-                        TextInput:
-                            id: setting_address
-                            hint_text: "Alamat"
-                            text: app.store_address
-                            multiline: False
-                            size_hint_y: None
-                            height: dp(48)
-                            padding: dp(12),dp(12)
+        # REPORTS
+        Screen:
+            name: "reports"
+            BoxLayout:
+                orientation: "vertical"
+                padding: dp(14)
+                spacing: dp(7)
 
-                        TextInput:
-                            id: setting_tax
-                            hint_text: "Pajak (%)"
-                            text: app.tax_percent
-                            input_filter: "float"
-                            multiline: False
-                            size_hint_y: None
-                            height: dp(48)
-                            padding: dp(12),dp(12)
+                TitleLabel:
+                    text: "Laporan 30 Hari"
 
-                        TextInput:
-                            id: setting_cashier
-                            hint_text: "Nama kasir"
-                            text: app.cashier_name
-                            multiline: False
-                            size_hint_y: None
-                            height: dp(48)
-                            padding: dp(12),dp(12)
+                ScrollView:
+                    do_scroll_x: False
+                    GridLayout:
+                        id: report_grid
+                        cols: 1
+                        spacing: dp(7)
+                        size_hint_y: None
+                        height: self.minimum_height
 
-                        Button:
-                            text: "SIMPAN PENGATURAN"
-                            size_hint_y: None
-                            height: dp(50)
-                            background_normal: ""
-                            background_color: .08,.45,.27,1
-                            color: 1,1,1,1
-                            bold: True
-                            on_release: app.save_settings()
+                Button:
+                    text: "EXPORT CSV"
+                    size_hint_y: None
+                    height: dp(50)
+                    background_normal: ""
+                    background_color: .10,.13,.18,1
+                    color: 1,1,1,1
+                    bold: True
+                    on_release: app.export_csv()
 
-                        Button:
-                            text: "BUAT BACKUP DATABASE"
-                            size_hint_y: None
-                            height: dp(50)
-                            background_normal: ""
-                            background_color: .10,.13,.18,1
-                            color: 1,1,1,1
-                            bold: True
-                            on_release: app.make_backup()
+        # SETTINGS
+        Screen:
+            name: "settings"
+            ScrollView:
+                do_scroll_x: False
+                BoxLayout:
+                    orientation: "vertical"
+                    padding: dp(16)
+                    spacing: dp(9)
+                    size_hint_y: None
+                    height: self.minimum_height
 
-                        Label:
-                            text: "Database SQLite lokal; aplikasi dapat berjalan offline."
-                            size_hint_y: None
-                            height: dp(42)
-                            color: .42,.46,.52,1
-                            halign: "left"
-                            valign: "middle"
-                            text_size: self.size
+                    TitleLabel:
+                        text: "Pengaturan"
+
+                    TextInput:
+                        id: setting_store
+                        hint_text: "Nama toko"
+                        text: app.store_name
+                        multiline: False
+                        size_hint_y: None
+                        height: dp(48)
+                        padding: dp(12),dp(12)
+
+                    TextInput:
+                        id: setting_address
+                        hint_text: "Alamat"
+                        text: app.store_address
+                        multiline: False
+                        size_hint_y: None
+                        height: dp(48)
+                        padding: dp(12),dp(12)
+
+                    TextInput:
+                        id: setting_tax
+                        hint_text: "Pajak (%)"
+                        text: app.tax_percent
+                        input_filter: "float"
+                        multiline: False
+                        size_hint_y: None
+                        height: dp(48)
+                        padding: dp(12),dp(12)
+
+                    TextInput:
+                        id: setting_cashier
+                        hint_text: "Nama kasir"
+                        text: app.cashier_name
+                        multiline: False
+                        size_hint_y: None
+                        height: dp(48)
+                        padding: dp(12),dp(12)
+
+                    Button:
+                        text: "SIMPAN PENGATURAN"
+                        size_hint_y: None
+                        height: dp(50)
+                        background_normal: ""
+                        background_color: .07,.45,.27,1
+                        color: 1,1,1,1
+                        bold: True
+                        on_release: app.save_settings()
+
+                    Button:
+                        text: "BUAT BACKUP DATABASE"
+                        size_hint_y: None
+                        height: dp(50)
+                        background_normal: ""
+                        background_color: .10,.13,.18,1
+                        color: 1,1,1,1
+                        bold: True
+                        on_release: app.make_backup()
+
+                    Label:
+                        text: "Database SQLite lokal; aplikasi dapat berjalan offline."
+                        size_hint_y: None
+                        height: dp(40)
+                        color: .43,.47,.54,1
+                        halign: "left"
+                        text_size: self.size
 """
+
 
 
 
@@ -733,8 +698,12 @@ class POSApp(App):
         grid.clear_widgets()
         for p in self.db.products(search)[:100]:
             b = Button(
-                text=f"{p['name']} | Stok {p['stock']:g} | {self.money(p['sell_price'])}",
-                size_hint_y=None, height=dp(48)
+                text=f"{p['name']}\nStok {p['stock']:g}  â€¢  {self.money(p['sell_price'])}",
+                size_hint_y=None, height=dp(62),
+                font_size="14sp",
+                halign="left",
+                valign="middle",
+                text_size=(None, None)
             )
             b.bind(on_release=lambda btn, pid=p["id"]: self.add_to_cart(pid))
             grid.add_widget(b)
@@ -850,11 +819,13 @@ class POSApp(App):
         grid = self.root.ids.products_grid
         grid.clear_widgets()
         for p in self.db.products(search):
-            row = BoxLayout(size_hint_y=None, height=dp(58), spacing=dp(4))
+            row = BoxLayout(size_hint_y=None, height=dp(68), spacing=dp(5))
             row.add_widget(Label(
                 text=f"{p['name']} | {p['barcode'] or '-'}\n"
                      f"Jual {self.money(p['sell_price'])} | Stok {p['stock']:g} {p['unit']}",
-                halign="left"
+                halign="left",
+                valign="middle",
+                text_size=(None, None)
             ))
             edit = Button(text="Edit", size_hint_x=None, width=dp(70))
             delete = Button(text="Hapus", size_hint_x=None, width=dp(70))
