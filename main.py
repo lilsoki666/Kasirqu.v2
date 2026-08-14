@@ -79,6 +79,14 @@ KV = """
     valign: "middle"
     text_size: self.size
 
+# --- Custom White Popup Style ---
+<WhitePopup>:
+    background_color: 1, 1, 1, 1
+    background: ""
+    title_color: 0.1, 0.14, 0.2, 1
+    title_size: "16sp"
+    separator_color: 0.85, 0.88, 0.92, 1
+
 # --- Root Layout Utama ---
 <RootLayout>:
     orientation: "vertical"
@@ -488,6 +496,10 @@ KV = """
 """
 
 
+class WhitePopup(Popup):
+    pass
+
+
 class RootLayout(BoxLayout):
     pass
 
@@ -630,7 +642,7 @@ class POSApp(App):
         content = BoxLayout(orientation="vertical", spacing=dp(10), padding=dp(10))
         
         scroll = ScrollView(do_scroll_x=False)
-        self.cart_popup_grid = GridLayout(cols=1, spacing=dp(8), size_hint_y=None)
+        self.cart_popup_grid = GridLayout(cols=1, spacing=dp(10), size_hint_y=None)
         self.cart_popup_grid.bind(minimum_height=self.cart_popup_grid.setter('height'))
         
         scroll.add_widget(self.cart_popup_grid)
@@ -639,7 +651,7 @@ class POSApp(App):
         footer = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(8))
         self.popup_total_label = Label(
             text="Total: " + self.money(sum(x["line_total"] for x in self.cart)),
-            bold=True, font_size="14sp", color=(0.05, 0.55, 0.25, 1),
+            bold=True, font_size="15sp", color=(0.05, 0.55, 0.25, 1),
             halign="left", valign="middle"
         )
         self.popup_total_label.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
@@ -655,7 +667,8 @@ class POSApp(App):
         footer.add_widget(btn_pay)
         content.add_widget(footer)
 
-        self.cart_popup = Popup(
+        # Menggunakan WhitePopup (Latar Belakang Putih)
+        self.cart_popup = WhitePopup(
             title="Keranjang Belanja",
             content=content,
             size_hint=(0.92, 0.75)
@@ -669,32 +682,27 @@ class POSApp(App):
         
         self.cart_popup_grid.clear_widgets()
         for item in self.cart:
-            # Menggunakan CardBox berlapis putih agar latar item terlihat bersih & terang
-            row = BoxLayout(size_hint_y=None, height=dp(52), spacing=dp(6), padding=dp(6))
-            with row.canvas.before:
-                from kivy.graphics import Color, RoundedRectangle
-                Color(1, 1, 1, 1) # Latar Putih
-                rect = RoundedRectangle(pos=row.pos, size=row.size, radius=[dp(6)])
-            row.bind(pos=lambda inst, val: setattr(rect, 'pos', val), size=lambda inst, val: setattr(rect, 'size', val))
+            # Baris item simpel & bersih tanpa grafis berantakan
+            row = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(6))
 
-            # Teks nama produk dan rincian warna Hitam Pekat (Kontras Tinggi)
+            # Teks Nama Produk & Harga Berwarna Hitam Pekat (Tampak Jelas)
             lbl = Label(
                 text=f"{item['name']}\n{self.money(item['price'])} x {item['qty']:g} = {self.money(item['line_total'])}",
                 halign="left", valign="middle", 
-                color=(0.07, 0.09, 0.15, 1), # Hitam Pekat
+                color=(0.10, 0.14, 0.20, 1), # Hitam Pekat
                 font_size="12sp", bold=True
             )
             lbl.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
 
             minus = Button(text="-", size_hint_x=None, width=dp(36),
-                           background_normal="", background_color=(.90,.92,.95,1),
-                           color=(.08,.10,.14,1), font_size="14sp", bold=True)
+                           background_normal="", background_color=(0.90, 0.92, 0.95, 1),
+                           color=(0.08, 0.10, 0.14, 1), font_size="14sp", bold=True)
             plus = Button(text="+", size_hint_x=None, width=dp(36),
-                          background_normal="", background_color=(.88,.95,.91,1),
-                          color=(.04,.48,.25,1), font_size="14sp", bold=True)
+                          background_normal="", background_color=(0.88, 0.95, 0.91, 1),
+                          color=(0.04, 0.48, 0.25, 1), font_size="14sp", bold=True)
             delete = Button(text="x", size_hint_x=None, width=dp(36),
-                            background_normal="", background_color=(.98,.90,.90,1),
-                            color=(.72,.12,.12,1), font_size="12sp", bold=True)
+                            background_normal="", background_color=(0.98, 0.90, 0.90, 1),
+                            color=(0.72, 0.12, 0.12, 1), font_size="12sp", bold=True)
             
             minus.bind(on_release=lambda btn, iid=item["id"]: self.change_qty(iid, -1))
             plus.bind(on_release=lambda btn, iid=item["id"]: self.change_qty(iid, 1))
@@ -825,7 +833,7 @@ class POSApp(App):
 
         save = Button(text="Simpan", size_hint_y=None, height=dp(44))
         box.add_widget(save)
-        popup = Popup(title="Produk", content=box, size_hint=(.9, .9))
+        popup = WhitePopup(title="Produk", content=box, size_hint=(.9, .9))
 
         def save_it(*_):
             try:
@@ -865,7 +873,7 @@ class POSApp(App):
         b = Button(text="Simpan", size_hint_y=None, height=dp(44))
         box.add_widget(t)
         box.add_widget(b)
-        popup = Popup(title="Kategori", content=box, size_hint=(.8, .35))
+        popup = WhitePopup(title="Kategori", content=box, size_hint=(.8, .35))
 
         def save_cat(*_):
             self.db.add_category(t.text)
@@ -931,14 +939,14 @@ class POSApp(App):
         if not rows:
             grid.add_widget(Label(
                 text="Belum ada transaksi.",
-                size_hint_y=None, height=dp(40)
+                size_hint_y=None, height=dp(40), color=(0.2, 0.2, 0.2, 1)
             ))
             return
         for r in rows:
             grid.add_widget(Label(
                 text=f"{r['day']} | {r['transactions']} transaksi | "
                      f"Total {self.money(r['total'])}",
-                size_hint_y=None, height=dp(40), halign="left"
+                size_hint_y=None, height=dp(40), halign="left", color=(0.1, 0.14, 0.2, 1)
             ))
 
     def export_csv(self):
@@ -984,7 +992,7 @@ class POSApp(App):
         lbl = Label(
             text=message,
             font_size="13sp",
-            color=(0.1, 0.14, 0.2, 1),
+            color=(0.10, 0.14, 0.20, 1),
             size_hint_y=None,
             halign="left",
             valign="top"
@@ -995,7 +1003,7 @@ class POSApp(App):
         scroll.add_widget(lbl)
         content.add_widget(scroll)
 
-        popup = Popup(
+        popup = WhitePopup(
             title=title,
             content=content,
             size_hint=(0.85, 0.55)
