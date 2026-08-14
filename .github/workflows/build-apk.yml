@@ -1,0 +1,60 @@
+name: Build Kasirqu Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      # 1. Mengambil source code repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Menyiapkan Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3. Menyiapkan Java dan dependency Android
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git \
+            zip \
+            unzip \
+            openjdk-17-jdk \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            cmake \
+            libffi-dev \
+            libssl-dev
+
+      # 4. Install Buildozer dan dependency Python
+      - name: Install Buildozer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            buildozer \
+            cython==0.29.33
+
+      # 5. Build APK
+      - name: Build Android APK
+        run: |
+          buildozer android debug
+
+      # 6. Simpan APK sebagai Artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kasirqu-debug-apk
+          path: bin/*.apk
+          if-no-files-found: error
