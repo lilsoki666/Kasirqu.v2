@@ -8,25 +8,61 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      # 1. Mengambil source code repository
+      # ==========================================
+      # 1. Checkout source code
+      # ==========================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Menyiapkan Python
+      # ==========================================
+      # 2. Setup Python
+      # ==========================================
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # 3. Menyiapkan Java dan dependency Android
+      # ==========================================
+      # 3. Setup Java 17
+      # ==========================================
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      # ==========================================
+      # 4. Force JAVA_HOME ke Java 17
+      # ==========================================
+      - name: Configure Java 17
+        shell: bash
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version
+          javac -version
+
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
+
+          sudo update-alternatives --set java "$JAVA_HOME/bin/java" || true
+          sudo update-alternatives --set javac "$JAVA_HOME/bin/javac" || true
+
+          echo "Java yang digunakan:"
+          which java
+          java -version
+
+      # ==========================================
+      # 5. Install system dependencies
+      # ==========================================
       - name: Install system dependencies
         run: |
           sudo apt-get update
+
           sudo apt-get install -y \
             git \
             zip \
             unzip \
-            openjdk-17-jdk \
             autoconf \
             automake \
             libtool \
@@ -38,20 +74,49 @@ jobs:
             libffi-dev \
             libssl-dev
 
-      # 4. Install Buildozer dan dependency Python
+      # ==========================================
+      # 6. Install Buildozer
+      # ==========================================
       - name: Install Buildozer
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
+
           python -m pip install \
             buildozer \
             cython==0.29.33
 
-      # 5. Build APK
+      # ==========================================
+      # 7. Verify environment
+      # ==========================================
+      - name: Verify build environment
+        run: |
+          echo "===== PYTHON ====="
+          python --version
+
+          echo "===== JAVA ====="
+          echo "JAVA_HOME=$JAVA_HOME"
+          which java
+          java -version
+
+          echo "===== JAVAC ====="
+          which javac
+          javac -version
+
+          echo "===== BUILDOZER ====="
+          buildozer --version
+
+      # ==========================================
+      # 8. Build APK
+      # ==========================================
       - name: Build Android APK
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME }}
         run: |
           buildozer android debug
 
-      # 6. Simpan APK sebagai Artifact
+      # ==========================================
+      # 9. Upload APK
+      # ==========================================
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
